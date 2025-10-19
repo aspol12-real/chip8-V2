@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <raylib.h>
 
 int SCREEN_HEIGHT = 600;
 int SCREEN_WIDTH = 960;
@@ -39,10 +40,11 @@ std::array<Color, 4> current_Pallete = palette1;
 
 void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_height);
 void handle_window_input();
+void update_window_dimensions(bool fullscreen);;
 
 
 int padding = 17;
-int titleBarHeight = 24;
+float titleBarHeight = 24;
 
 Rectangle chip8_screen = {(float)padding, (float)padding, 512, 256 + titleBarHeight};
 

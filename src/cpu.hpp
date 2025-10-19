@@ -81,7 +81,7 @@ class cpu {
         void sub_yx(uint8_t x, uint8_t y);
         void shift_left(uint8_t x, uint8_t y);
         void shift_right(uint8_t x, uint8_t y);
-        void gen_rand(uint8_t nn, uint8_t x);
+        void gen_rand(uint8_t nn, uint8_t x, uint8_t random);
         void word_index();
         void small_hex(uint8_t x);
         void big_hex(uint8_t x);

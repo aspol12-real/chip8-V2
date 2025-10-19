@@ -3,7 +3,7 @@ CXXFLAGS = --std=c++17
 
 LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt 
 
-SOURCES = src/main.cpp src/cpu.cpp src/graphics.cpp src/sound.cpp
+SOURCES = src/main.cpp src/cpu.cpp src/graphics.cpp src/sound.cpp src/debug.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 chip8: $(OBJECTS)

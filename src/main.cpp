@@ -16,6 +16,8 @@ int IPF = 11;
 bool speed = false;
 bool viewport_info = false;
 bool fullscreen = false;
+int window_height = SCREEN_HEIGHT;
+int window_width = SCREEN_WIDTH;
 
 void render_window();
 void handle_game_input();
@@ -27,7 +29,7 @@ int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cout << "USAGE: ./chip8 [filename].ch8 \n";
         exit( 1 );
-    }
+    }   
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "CHIP8");
     SetTargetFPS(60);
@@ -84,17 +86,25 @@ void handle_game_input() {
 
 void render_window() {
 
+
     mousePosition = GetMousePosition();
+
+    update_window_dimensions(fullscreen);
 
     BeginDrawing();
     ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
+    if (!fullscreen) {
+        GuiPanel(graphics_plane, "Graphics");
+        GuiGroupBox(tabs, "CONTROLS");
+        render_chip8_viewport(chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
+    } else {
 
-    GuiPanel(graphics_plane, "Graphics");
-    GuiGroupBox(tabs, "CONTROLS");
-    
-    render_chip8_viewport(chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
+        int monitor_width = GetMonitorWidth(GetCurrentMonitor());
+        int monitor_height = GetMonitorHeight(GetCurrentMonitor());     
 
+        render_chip8_viewport(0, 0, window_width, window_height);
+    } 
 
 
     EndDrawing();
@@ -103,14 +113,9 @@ void render_window() {
 
 void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_height) {
 
-    GuiPanel(chip8_screen, "CHIP-8");
-
-    BeginScissorMode(chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height - titleBarHeight);
-    
-    x_offset = chip8_screen.x;
-    y_offset = chip8_screen.y + titleBarHeight;
-    view_width = chip8_screen.width;
-    view_height = chip8_screen.height - titleBarHeight;
+    if (!fullscreen) {
+        GuiPanel(chip8_screen, "CHIP-8");
+    }
 
 
     int curr_height;
@@ -163,12 +168,6 @@ void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_
                           curr_pix_x, curr_pix_y, curr_color);
     }
 
-    if (viewport_info) {
-        DrawText(TextFormat("HIRES = %d", chip8.scr.hires), chip8_screen.x, chip8_screen.y + titleBarHeight, 20, RED);
-        DrawText(TextFormat("IPF = %d", IPF), chip8_screen.x, chip8_screen.y + titleBarHeight + 30, 20, RED);
-    }
-
-    EndScissorMode();
 }
 
 void handle_window_input() {
@@ -206,5 +205,29 @@ void handle_window_input() {
     if (IsKeyPressed(KEY_LEFT_SHIFT)) {
         fullscreen = !fullscreen;
         ToggleFullscreen();
+    }
+}
+
+void update_window_dimensions(bool fullscreen) {
+    
+
+    if (IsWindowResized()) {
+        
+
+        int new_width = GetScreenWidth();
+        int new_height = GetScreenHeight();
+
+        if (!fullscreen) {
+
+            /*
+            graphics_plane.width = new_width - (padding * 2);
+
+            int graphics_plane_y = chip8_screen.y + chip8_screen.height + padding;
+            int graphics_plane_height = SCREEN_HEIGHT - graphics_plane_y - padding;
+
+            graphics_plane.height = graphics_plane_height;
+            */
+
+        }
     }
 }

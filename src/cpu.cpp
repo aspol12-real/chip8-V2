@@ -87,6 +87,8 @@ void cpu::execute() {
 
     uint8_t keyindex = v[x];
 
+    uint8_t random = rand() % 0xFF;
+
     pc += 2; //post fetch increment!
 
     //decode / execute
@@ -147,7 +149,7 @@ void cpu::execute() {
         case 0x9: jneq(v[x], v[y]); break;
         case 0xA: I = nnn; break;
         case 0xB: pc = (nnn + v[0]); break;
-        case 0xC: gen_rand(nn, v[x]); break;
+        case 0xC: gen_rand(nn, v[x], random); break;
 
         case 0xD:
             if (n == 0) {
@@ -326,11 +328,9 @@ void cpu:: shift_right(uint8_t x, uint8_t y) {
 
 }
 
-void cpu::gen_rand(uint8_t nn, uint8_t x) {
+void cpu::gen_rand(uint8_t nn, uint8_t x, uint8_t random) {
 
-    uint8_t random = rand() % 256;
-    random &= nn;
-    v[x] = random;
+    v[x] = (random & nn);
 
 }
 
