@@ -2,6 +2,9 @@
 
 #include <array>
 
+int SCREEN_HEIGHT = 600;
+int SCREEN_WIDTH = 960;
+
 std::array<Color, 4> palette1 = {{
     {244, 233, 205, 255},
     {119, 172, 62, 255},
@@ -38,10 +41,32 @@ void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_
 void handle_window_input();
 
 
-int padding = 3;
+int padding = 17;
 int titleBarHeight = 24;
-Rectangle chip8_screen = {padding, padding, 512, 256 + titleBarHeight};
-Rectangle graphics_plane = {padding, chip8_screen.height + (padding * 2), 512, 30};
+
+Rectangle chip8_screen = {(float)padding, (float)padding, 512, 256 + titleBarHeight};
+
+
+int graphics_plane_y = chip8_screen.y + chip8_screen.height + padding;
+int graphics_plane_height = SCREEN_HEIGHT - graphics_plane_y - padding;
+
+Rectangle graphics_plane = {
+    (float)padding, 
+    (float)graphics_plane_y, 
+    512,
+    (float)graphics_plane_height
+};
+
+
+int tabs_x = chip8_screen.x + chip8_screen.width + padding;
+int tabs_width = SCREEN_WIDTH - tabs_x - padding;
+
+Rectangle tabs = {
+    (float)tabs_x,
+    (float)padding, 
+    (float)tabs_width,
+    40 
+};
 
 Vector2 mousePosition = { 0 };
 bool dragWindow = false;

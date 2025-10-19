@@ -47,6 +47,7 @@ bool graphics::draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
     int curr_height;
     int curr_width;
 
+    bool collision_flag = false;
     if (!hires) {
         curr_height = LORES_HEIGHT;
         curr_width = LORES_WIDTH;
@@ -70,20 +71,25 @@ bool graphics::draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
 
                 int offset = (scr_y * curr_width) + scr_x;
 
-                if (collision(offset)) {
-                    return true;
-                }
+                bool before = get_pixel(offset);
 
                 pix_to_plane(offset);
 
+                bool after = get_pixel(offset);
+
+                if (before && !after) {
+                    collision_flag = true;
+                }
             }
         }
     }
-    return false;
+    return collision_flag;
 }
 
 bool graphics::draw_sprite16(uint8_t x, uint8_t y, uint16_t I) {
 
+    bool collision_flag = false;
+    
     int curr_height;
     int curr_width;
 
@@ -113,16 +119,20 @@ bool graphics::draw_sprite16(uint8_t x, uint8_t y, uint16_t I) {
 
                 int offset = (scr_y * curr_width) + scr_x;
 
-                if (collision(offset)) {
-                    return true;
-                }
+                bool before = get_pixel(offset);
 
                 pix_to_plane(offset);
+
+                bool after = get_pixel(offset);
+
+                if (before && !after) {
+                    collision_flag = true;
+                }
 
             }
         }
     }
-    return false;
+    return collision_flag;
 
 }
 
@@ -186,4 +196,21 @@ void graphics::pix_to_plane(int offset) {
             hires_p2[offset] ^= true;
         }
     }
+}
+
+bool graphics::get_pixel(int offset) {
+    if (!hires) {
+        if (selected_plane == 1) return lores_p1[offset];
+        if (selected_plane == 2) return lores_p2[offset];
+        if (selected_plane == 3) return lores_p1[offset] || lores_p2[offset];
+    } else {
+        if (selected_plane == 1) return hires_p1[offset];
+        if (selected_plane == 2) return hires_p2[offset];
+        if (selected_plane == 3) return hires_p1[offset] || hires_p2[offset];
+    }
+    return false;
+}
+
+void scroll_down(uint8_t n) {
+    
 }

@@ -2,7 +2,7 @@
 
 #define RAYGUI_IMPLEMENTATION
 #include "ext/raygui.h"
-#include "ext/style_genesis.h"
+#include "ext/style_cherry.h"
 
 //include my own other src files
 #include "debug.hpp"
@@ -10,16 +10,17 @@
 #include "graphics.hpp"
 #include "sound.hpp"
 
-
-const int SCREEN_HEIGHT = 600;
-const int SCREEN_WIDTH = 960;
-
 cpu chip8;
 
-const int IPF = 11;
+int IPF = 11;  
+bool speed = false;
+bool viewport_info = false;
+bool fullscreen = false;
 
 void render_window();
 void handle_game_input();
+
+
 
 int main(int argc, char* argv[]) {
 
@@ -30,7 +31,7 @@ int main(int argc, char* argv[]) {
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "CHIP8");
     SetTargetFPS(60);
-    GuiLoadStyleGenesis();  
+    GuiLoadStyleCherry();  
     GuiEnable();
 
     chip8.init();
@@ -88,9 +89,13 @@ void render_window() {
     BeginDrawing();
     ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
-    render_chip8_viewport(chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
 
     GuiPanel(graphics_plane, "Graphics");
+    GuiGroupBox(tabs, "CONTROLS");
+    
+    render_chip8_viewport(chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
+
+
 
     EndDrawing();
     
@@ -99,7 +104,14 @@ void render_window() {
 void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_height) {
 
     GuiPanel(chip8_screen, "CHIP-8");
+
     BeginScissorMode(chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height - titleBarHeight);
+    
+    x_offset = chip8_screen.x;
+    y_offset = chip8_screen.y + titleBarHeight;
+    view_width = chip8_screen.width;
+    view_height = chip8_screen.height - titleBarHeight;
+
 
     int curr_height;
     int curr_width;
@@ -151,10 +163,25 @@ void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_
                           curr_pix_x, curr_pix_y, curr_color);
     }
 
+    if (viewport_info) {
+        DrawText(TextFormat("HIRES = %d", chip8.scr.hires), chip8_screen.x, chip8_screen.y + titleBarHeight, 20, RED);
+        DrawText(TextFormat("IPF = %d", IPF), chip8_screen.x, chip8_screen.y + titleBarHeight + 30, 20, RED);
+    }
+
     EndScissorMode();
 }
 
 void handle_window_input() {
+
+    if (IsKeyPressed(KEY_SPACE)) {
+        if (speed == false) {
+            speed = true;
+            IPF = 1000;
+        } else {
+            speed = false;
+            IPF = 11;
+        }
+    }
     if (IsKeyPressed(KEY_FIVE)) {
         current_Pallete = palette1;
     }
@@ -166,5 +193,18 @@ void handle_window_input() {
     }
     if (IsKeyPressed(KEY_EIGHT)) {
         current_Pallete = palette4;
+    }
+
+    if (IsKeyPressed(KEY_TAB)) {
+        if (!viewport_info) {
+            viewport_info = true;
+        } else {
+            viewport_info = false;
+        }
+    }
+
+    if (IsKeyPressed(KEY_LEFT_SHIFT)) {
+        fullscreen = !fullscreen;
+        ToggleFullscreen();
     }
 }

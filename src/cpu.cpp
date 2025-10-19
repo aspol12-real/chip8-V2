@@ -101,7 +101,7 @@ void cpu::execute() {
 
             switch (nn) {
 
-                case 0xE0: scr.clear_all(); break;
+                case 0xE0: scr.clear_plane(); break;
                 case 0xEE: ret(); break;
                 case 0xFB: break; //scroll right
                 case 0xFC: break; //scroll left
@@ -137,9 +137,9 @@ void cpu::execute() {
                 case 0x3: v[x] = (v[x] ^ v[y]); break;
                 case 0x4: add(x, y); break;
                 case 0x5: sub_xy(x, y); break;
-                case 0x6: shift_right(x); break;
+                case 0x6: shift_right(x, y); break;
                 case 0x7: sub_yx(x, y); break;
-                case 0xE: shift_left(x); break;
+                case 0xE: shift_left(x, y); break;
 
             }
             break;
@@ -161,14 +161,18 @@ void cpu::execute() {
         case 0xE:
             if (nn == 0x9E) {
                 if (keyindex < 16 && keys[keyindex]) {
-                    pc += 2; //skip next opcode if key == regs[X]
+                    big_skip_check();
+                    pc += 2;
                 }
             } else if (nn == 0xA1) {
                 if (keyindex < 16 && !keys[keyindex]) {
-                    pc += 2; //skip next opcode if key != regs[X]
+                    big_skip_check();
+                    pc += 2;
                 }
             }
             break;
+
+            
         case 0xF:
             switch (nn) {
 
@@ -176,17 +180,18 @@ void cpu::execute() {
                 case 0x01: scr.selected_plane = x; break;
                 //case 0x02: audio pattern into buffer
                 case 0x07: v[x] = delay; break;
-                case 0x0A: break;
+                case 0x0A: wait(x); break;
                 case 0x15: delay = v[x]; break;
                 case 0x18: sound = v[x]; break;
                 case 0x1E: I += v[x]; break;
                 case 0x29: small_hex(x); break;
                 case 0x30: big_hex(x); break;
                 case 0x33: BCD(x); break;
-                //case 
+                //case 3A audio pitch 
                 case 0x55: reg_to_mem(0, x); I += (x + 1); break;
                 case 0x65: reg_from_mem(0, x); I += (x + 1); break;
-
+                case 0x75: reg_to_flags(0, x); break;
+                case 0x85: reg_from_flags(0, x); break;
             }
             break;
         default:
@@ -222,7 +227,9 @@ void cpu::ret() {
 
 void cpu::jeq(uint8_t a, uint8_t b) {
 
+
     if (a == b) {
+        big_skip_check(); 
         pc += 2;
     } else {
         return;
@@ -233,6 +240,7 @@ void cpu::jeq(uint8_t a, uint8_t b) {
 void cpu::jneq(uint8_t a, uint8_t b) {
 
     if (a != b) {
+        big_skip_check();
         pc += 2;
     } else {
         return;
@@ -300,16 +308,18 @@ void cpu::sub_yx(uint8_t x, uint8_t y) {
 
 }
 
-void cpu::shift_left(uint8_t x) {
+void cpu::shift_left(uint8_t x, uint8_t y) {
 
+    v[x] = v[y];
     uint8_t temp = v[x];
     v[x] = temp << 1;
     v[0xF] = (temp & 0x80) >> 7;
 
 }
 
-void cpu:: shift_right(uint8_t x) {
+void cpu:: shift_right(uint8_t x, uint8_t y) {
 
+    v[x] = v[y];
     uint8_t temp = v[x];
     v[x] = temp >> 1;
     v[0xF] = temp & 0x1;
@@ -358,4 +368,35 @@ void cpu::BCD(uint8_t x) {
     mem[I + 1] = (v[x] / 10) % 10;
     mem[I + 2] = v[x] % 10;
 
+}
+
+void cpu::wait(uint8_t x) {
+
+    bool key_pressed = false;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (keys[i]) {      
+            v[x] = i;       
+            key_pressed = true;
+            return;
+        }
+        
+    }
+    if (!key_pressed) {       
+        pc -= 2; 
+    }
+}
+
+void cpu::reg_to_flags(uint8_t x, uint8_t y) {
+
+    for (int i = x; i <= y; i++) {
+        flags_storage[I + i] = v[i];
+    }
+
+}
+
+void cpu::reg_from_flags(uint8_t x, uint8_t y) {
+
+    for (int i = x; i <= y; i++) {
+        v[i] = flags_storage[I + i];
+    }
 }

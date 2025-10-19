@@ -18,6 +18,7 @@ class cpu {
         uint8_t mem[MEM_SIZE]; //65kb memory space (XO-CHIP spec)
         uint16_t stack[STACK_SIZE];
         uint8_t v[16]; //16 8-bit registers v0-vF
+        uint8_t flags_storage[16];
 
         uint16_t pc; //16-bit program counter
         uint16_t sp; //16-bit stack pointer
@@ -73,17 +74,21 @@ class cpu {
         void jneq(uint8_t a, uint8_t b);
         void reg_to_mem(uint8_t x, uint8_t y);
         void reg_from_mem(uint8_t x, uint8_t y);
+        void reg_to_flags(uint8_t x, uint8_t y);
+        void reg_from_flags(uint8_t x, uint8_t y);
         void add(uint8_t x, uint8_t y);
         void sub_xy(uint8_t x, uint8_t y);
         void sub_yx(uint8_t x, uint8_t y);
-        void shift_left(uint8_t x);
-        void shift_right(uint8_t x);
+        void shift_left(uint8_t x, uint8_t y);
+        void shift_right(uint8_t x, uint8_t y);
         void gen_rand(uint8_t nn, uint8_t x);
         void word_index();
         void small_hex(uint8_t x);
         void big_hex(uint8_t x);
         void big_skip_check();
         void BCD(uint8_t x);
+        void wait(uint8_t x);
+
 
     public:
 

@@ -38,7 +38,13 @@ class graphics {
 
         bool collision(int offset);
         void pix_to_plane(int offset);
+        bool get_pixel(int offset);
 
         void clear_all();
         void clear_plane();
+
+        void scroll_left();
+        void scroll_right();
+        void scroll_down(uint8_t n);
+        void scroll_up();
 };
