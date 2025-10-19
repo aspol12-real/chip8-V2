@@ -1,3 +1,3 @@
-to compile on linux you must have raylib installed
+to compile on linux you must have raylib and make/g++ installed
 
 run `make`
