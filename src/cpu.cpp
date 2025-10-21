@@ -358,6 +358,7 @@ void cpu::big_skip_check() {
     uint16_t next_opcode = (mem[pc] << 8) | mem[pc + 1];
 
     if (next_opcode == 0xF000) {
+        std::cout << "f000 detected!\n"; 
         pc += 2; //additional 2 steps
     }
 }
