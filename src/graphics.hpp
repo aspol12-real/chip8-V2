@@ -11,6 +11,12 @@ const int HIRES_WIDTH = 128;
 const int HIRES_HEIGHT = 64;
 const int HIRES_DIM = HIRES_WIDTH * HIRES_HEIGHT;
 
+const int MEGACHIP_WIDTH = 256;
+const int MEGACHIP_HEIGHT = 192;
+const int MEGACHIP_DIM = MEGACHIP_WIDTH * MEGACHIP_HEIGHT;
+
+const int MEGACHIP_COLORS = 255;
+
 class graphics {
     private:
 
@@ -18,7 +24,6 @@ class graphics {
     public:
 
         graphics(uint8_t* mem_ptr) : m_mem_ptr(mem_ptr) {}
-
 
         //bitplanes
 
@@ -30,6 +35,16 @@ class graphics {
         bool hires_p1[HIRES_DIM];
         bool hires_p2[HIRES_DIM];
 
+        //megachip
+        uint8_t megachip_scr[MEGACHIP_DIM];
+        uint32_t palette[MEGACHIP_COLORS];
+        uint8_t sprw;
+        uint8_t sprh;
+        uint8_t alpha;
+
+        uint8_t b_mode;
+
+        bool megachip_mode;
         bool hires;
         uint8_t selected_plane;
 
@@ -46,5 +61,8 @@ class graphics {
         void scroll_left();
         void scroll_right();
         void scroll_down(uint8_t n);
-        void scroll_up();
+        void scroll_up_schip(uint8_t n);
+
+        //megachip 
+        bool draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint16_t I);
 };

@@ -44,6 +44,10 @@ void graphics::clear_plane() {
 
 bool graphics::draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
 
+    if (megachip_mode) {
+        return draw_sprite_megachip(x, y, height, I);
+    }
+
     int curr_height;
     int curr_width;
 
@@ -87,6 +91,10 @@ bool graphics::draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
 }
 
 bool graphics::draw_sprite16(uint8_t x, uint8_t y, uint16_t I) {
+
+    if (megachip_mode) {
+        return false;
+    }
 
     bool collision_flag = false;
     
@@ -211,6 +219,41 @@ bool graphics::get_pixel(int offset) {
     return false;
 }
 
-void scroll_down(uint8_t n) {
+void graphics::scroll_down(uint8_t n) {
     
+}
+
+void graphics::scroll_up_schip(uint8_t n) {
+
+}
+
+bool graphics::draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
+
+
+
+    bool collision_flag = false;
+    for (int i = 0; i < sprh; i++) {
+
+        int sprite_row_offset = i * sprw;
+        uint8_t scr_y = (y + i) % MEGACHIP_HEIGHT;
+
+        for (int j = 0; j < sprw; j++) {
+
+            uint8_t scr_x = (x + j) % MEGACHIP_WIDTH;
+            int offset = (scr_y * MEGACHIP_WIDTH) + scr_x;
+
+            uint8_t spritePixel = m_mem_ptr[I + sprite_row_offset + j];
+
+            uint8_t background_color = megachip_scr[offset];
+            if (spritePixel != 0) {
+                if (background_color > 0) {
+                    collision_flag = true;
+                }
+
+                megachip_scr[offset] = spritePixel;
+            }
+        }
+    }
+
+    return collision_flag;
 }

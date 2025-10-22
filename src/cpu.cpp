@@ -13,6 +13,8 @@ void cpu::init() {
 
     scr.selected_plane = 3;
     scr.hires = false;
+    scr.megachip_mode = false;
+    scr.palette[0] = 0;
 
     for (int i = 0; i < 16; i++) {
         v[i] = 0;
@@ -24,6 +26,7 @@ void cpu::init() {
     }
 
     scr.clear_all();
+    std::srand(std::time(nullptr));
 
 }
 
@@ -43,10 +46,16 @@ void cpu::load_rom(std::string rom) {
     size_t fileSize = file.tellg();
     file.seekg(0);
 
-    if (fileSize > MEM_SIZE) {
+    if (fileSize < CHIP8_SIZE) {
+        std::cout << "CHIP-8 / SCHIP rom loaded.\n"; 
+    } else if (fileSize > CHIP8_SIZE && fileSize < XO_CHIP_SIZE) {
+        std::cout << "XO-CHIP rom loaded.\n";
+    } else if (fileSize > XO_CHIP_SIZE && fileSize < MEGACHIP_SIZE) {
+        std::cout << "MEGACHIP rom loaded.\n";
+    } else {
         std::cout << "Invalid ROM size: " << fileSize << " bytes\n";
-        exit( 1 );
-    }  
+    }
+
 
     char byte;
     int address = 0;
@@ -87,22 +96,34 @@ void cpu::execute() {
 
     uint8_t keyindex = v[x];
 
-    uint8_t random = rand() % 0xFF;
+    uint8_t random = rand() & 0xFF;
 
     pc += 2; //post fetch increment!
 
     //decode / execute
 
     switch (inst) {
-
-       
+  
         case 0x0: 
 
+            switch(x) { //0x00
+                case 0x1: ld_i_nnnnnn(nn); break;
+                case 0x2: ld_i_palette(nn); break;
+                case 0x3: scr.sprw = nn; break;
+                case 0x4: scr.sprh = nn; break;
+                case 0x5: scr.alpha = nn; break;
+                // 0x6 sound
+                // 0x7 sound
+                case 0x8: scr.b_mode = n; break;
+            }
+            
             if ((nn >> 4) == 0xC) {}
             else if ((nn >> 4) == 0xD) {}
 
             switch (nn) {
 
+                case 0x10: scr.megachip_mode = false; break;
+                case 0x11: scr.megachip_mode = true; break;
                 case 0xE0: scr.clear_plane(); break;
                 case 0xEE: ret(); break;
                 case 0xFB: break; //scroll right
@@ -115,7 +136,7 @@ void cpu::execute() {
             break;
 
         case 0x1: pc = nnn; break;
-        case 0x2: call(nnn); break;
+        case 0x2: call(nnn, opcode); break;
         case 0x3: jeq(v[x], nn); break;
         case 0x4: jneq(v[x], nn); break;
         
@@ -149,7 +170,7 @@ void cpu::execute() {
         case 0x9: jneq(v[x], v[y]); break;
         case 0xA: I = nnn; break;
         case 0xB: pc = (nnn + v[0]); break;
-        case 0xC: gen_rand(nn, v[x], random); break;
+        case 0xC: gen_rand(nn, x, random); break;
 
         case 0xD:
             if (n == 0) {
@@ -207,11 +228,16 @@ void cpu::execute() {
 
 
 
-void cpu::call(uint16_t nnn) {
+void cpu::call(uint16_t nnn, uint16_t opcode) {
 
     if (sp >= 15) {
-        std::cout << "STACK OVERFLOW";
-        return;
+        std::cout << "STACK OVERFLOW. I = " << std::hex <<  +I << " OPCODE = " << +opcode << " PC = " << +pc << "\n";
+        std::cout << "STACK = { \n";
+        for (int i = 0; i < 16; i++) {
+            std::cout << stack[i] << "\n";
+        }
+        std::cout << "}\n";
+        exit( 1 );
     }
     sp++;
     stack[sp] = pc;
@@ -228,7 +254,6 @@ void cpu::ret() {
 }
 
 void cpu::jeq(uint8_t a, uint8_t b) {
-
 
     if (a == b) {
         big_skip_check(); 
@@ -399,5 +424,32 @@ void cpu::reg_from_flags(uint8_t x, uint8_t y) {
 
     for (int i = x; i <= y; i++) {
         v[i] = flags_storage[I + i];
+    }
+}
+
+void cpu::ld_i_nnnnnn(uint8_t nn) {
+
+    uint16_t next_opcode = (mem[pc] << 8) | mem[pc + 1];
+
+    uint32_t high = nn;
+    uint16_t low = next_opcode;
+    I = (high << 16) | low;
+    pc += 2;
+
+}
+
+void cpu::ld_i_palette(uint8_t nn) {
+    for (int i = 1; i <= nn; i++) {
+
+        uint32_t offset = I + (i) * 4;
+
+        uint8_t alpha = mem[offset];     // alpha (byte 0)
+        uint8_t red   = mem[offset + 1]; // red (byte 1)
+        uint8_t green = mem[offset + 2]; // green (byte 2)
+        uint8_t blue  = mem[offset + 3]; // blue (byte 3)
+        
+        uint32_t color = (alpha << 24) | (red << 16) | (green << 8) | blue;
+
+        scr.palette[i] = color;
     }
 }

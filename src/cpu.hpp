@@ -5,24 +5,27 @@
 #include <vector>
 #include <fstream>
 #include <cstdlib>
+#include <ctime>
 
 #include "graphics.hpp"
 
-const int MEM_SIZE = 65535;
+const int CHIP8_SIZE = 4096;
+const int XO_CHIP_SIZE = 65535;
+const int MEGACHIP_SIZE = 33550000;
 const int STACK_SIZE = 16;
 
 class cpu {
     private:
 
 
-        uint8_t mem[MEM_SIZE]; //65kb memory space (XO-CHIP spec)
+        uint8_t mem[MEGACHIP_SIZE]; //65kb memory space (XO-CHIP spec)
         uint16_t stack[STACK_SIZE];
         uint8_t v[16]; //16 8-bit registers v0-vF
         uint8_t flags_storage[16];
 
         uint16_t pc; //16-bit program counter
         uint16_t sp; //16-bit stack pointer
-        uint16_t I;  //16-bit memory pointer
+        uint32_t I;  //16-bit memory pointer
 
 
         uint8_t font_data[240] = {
@@ -68,7 +71,7 @@ class cpu {
 
         //opcode methods
 
-        void call(uint16_t nnn);
+        void call(uint16_t nnn, uint16_t opcode);
         void ret();
         void jeq(uint8_t a, uint8_t b);
         void jneq(uint8_t a, uint8_t b);
@@ -89,6 +92,10 @@ class cpu {
         void BCD(uint8_t x);
         void wait(uint8_t x);
 
+
+        //megachip opcodes
+        void ld_i_nnnnnn(uint8_t nn);
+        void ld_i_palette(uint8_t nn);
 
     public:
 

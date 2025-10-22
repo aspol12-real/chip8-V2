@@ -97,6 +97,9 @@ void render_window() {
     if (!fullscreen) {
         GuiPanel(graphics_plane, "Graphics");
         GuiGroupBox(tabs, "CONTROLS");
+        if (chip8.scr.megachip_mode) {
+            chip8_screen.height = MEGACHIP_HEIGHT * 2 + titleBarHeight;
+        }
         render_chip8_viewport(chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
     } else {
 
@@ -127,6 +130,7 @@ void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_
 
     bool* curr_plane1;
     bool* curr_plane2;
+    uint8_t* megachip_screen = chip8.scr.megachip_scr;
 
     if (!chip8.scr.hires) {
         curr_dim = LORES_DIM;
@@ -142,27 +146,48 @@ void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_
         curr_plane2 = chip8.scr.hires_p2;
     }
 
+    if (chip8.scr.megachip_mode) {
+        curr_dim = MEGACHIP_DIM;
+        curr_height = MEGACHIP_HEIGHT;
+        curr_width = MEGACHIP_WIDTH;
+    }
+
     curr_pix_x = view_width / curr_width;
     curr_pix_y = view_height / curr_height;
 
     for (int i = 0; i < curr_dim; i++) {
         
-        uint8_t p1 = curr_plane1[i];
-        uint8_t p2 = curr_plane2[i];
+        if (!chip8.scr.megachip_mode) {
+            uint8_t p1 = curr_plane1[i];
+            uint8_t p2 = curr_plane2[i];
 
-        if (p1 && p2) {
-            curr_color = current_Pallete[0];
-        }
-        else if (p1 && (!p2)) {
-            curr_color = current_Pallete[1];
-        }
-        else if ((!p1) && p2) {
-            curr_color = current_Pallete[2];
-        }
-        else if (!(p1 || p2)) {
-            curr_color = current_Pallete[3];
-        }
+            if (p1 && p2) {
+                curr_color = current_Pallete[0];
+            }
+            else if (p1 && (!p2)) {
+                curr_color = current_Pallete[1];
+            }
+            else if ((!p1) && p2) {
+                curr_color = current_Pallete[2];
+            }
+            else if (!(p1 || p2)) {
+                curr_color = current_Pallete[3];
+            }
+        } else { //megachip rendering enabled
 
+            //ARGB FORMAT
+
+            uint8_t color_idx = chip8.scr.megachip_scr[i];
+            
+            uint32_t color = (color_idx < MEGACHIP_COLORS) ? chip8.scr.palette[color_idx] : 0xFF000000;
+
+            uint8_t alpha = color >> 24;
+            uint8_t red = (color >> 16) & 0xFF;
+            uint8_t green = (color >> 8) & 0xFF;
+            uint8_t blue = color & 0xFF;
+            
+            curr_color = {red, green, blue, alpha};
+        }
         DrawRectangle(x_offset + ((i % curr_width) * curr_pix_x), 
                           y_offset + ((i / curr_width) * curr_pix_y), 
                           curr_pix_x, curr_pix_y, curr_color);
@@ -175,8 +200,8 @@ void handle_window_input() {
     if (IsKeyPressed(KEY_SPACE)) {
         if (speed == false) {
             speed = true;
-            IPF = 1000;
-        } else {
+            IPF = 2000;
+        } else if (speed == true) {
             speed = false;
             IPF = 11;
         }
