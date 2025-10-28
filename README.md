@@ -1,6 +1,6 @@
 to compile on linux you must have raylib and make/g++ installed
 
-run `make`
+run `make` to build,
 and to use the emulator just run 
 `./chip8 pathtorom.ch8`
 
