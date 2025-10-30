@@ -19,9 +19,11 @@ bool fullscreen = false;
 int window_height = SCREEN_HEIGHT;
 int window_width = SCREEN_WIDTH;
 
-void render_window();
+void render_window(graphics& scr);
 void handle_game_input();
-
+void render_disassembly_viewport(int x_offset, int y_offset, int view_width, int view_height);
+void render_memory_viewport(int x_offset, int y_offset, int view_width, int view_height);
+void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_width, int view_height);
 
 
 int main(int argc, char* argv[]) {
@@ -31,19 +33,20 @@ int main(int argc, char* argv[]) {
         exit( 1 );
     }   
 
+    Font customfont = LoadFont("res/fonts/JetBrainsMono-Bold.ttf");
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "CHIP8");
     SetTargetFPS(60);
     GuiLoadStyleCherry();  
     GuiEnable();
 
+    graphics scr(chip8.get_memory_ptr(), &chip8);
+    chip8.set_graphics_ptr(&scr);
     chip8.init();
 
     std::string rom = argv[1];
     chip8.load_rom(rom);
 
     //everything that happens in the window
-
-
 
     while (!WindowShouldClose()) {
 
@@ -55,7 +58,7 @@ int main(int argc, char* argv[]) {
             chip8.execute();
         }
 
-        render_window(); //render @60 fps
+        render_window(scr); 
 
     }
 
@@ -63,50 +66,23 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void handle_game_input() {
-
-    chip8.keys[0x1] = IsKeyDown(KEY_ONE);
-    chip8.keys[0x2] = IsKeyDown(KEY_TWO);
-    chip8.keys[0x3] = IsKeyDown(KEY_THREE);
-    chip8.keys[0xC] = IsKeyDown(KEY_FOUR);
-    chip8.keys[0x4] = IsKeyDown(KEY_Q);
-    chip8.keys[0x5] = IsKeyDown(KEY_W);
-    chip8.keys[0x6] = IsKeyDown(KEY_E);
-    chip8.keys[0xD] = IsKeyDown(KEY_R);
-    chip8.keys[0x7] = IsKeyDown(KEY_A);
-    chip8.keys[0x8] = IsKeyDown(KEY_S);
-    chip8.keys[0x9] = IsKeyDown(KEY_D);
-    chip8.keys[0xE] = IsKeyDown(KEY_F);
-    chip8.keys[0xA] = IsKeyDown(KEY_Z);
-    chip8.keys[0x0] = IsKeyDown(KEY_X);
-    chip8.keys[0xB] = IsKeyDown(KEY_C);
-    chip8.keys[0xF] = IsKeyDown(KEY_V);
-
-} 
-
-void render_window() {
+void render_window(graphics& scr) {
 
 
     mousePosition = GetMousePosition();
-
-    update_window_dimensions(fullscreen);
 
     BeginDrawing();
     ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
     if (!fullscreen) {
-        GuiPanel(graphics_plane, "Graphics");
-        GuiGroupBox(tabs, "CONTROLS");
-        if (chip8.scr.megachip_mode) {
+        GuiPanel(memory_plane, "Memory");
+        GuiGroupBox(disassembly, "Disassembly");
+        if (scr.megachip_mode) {
             chip8_screen.height = MEGACHIP_HEIGHT * 2 + titleBarHeight;
         }
-        render_chip8_viewport(chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
+        render_chip8_viewport(scr, chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
     } else {
-
-        int monitor_width = GetMonitorWidth(GetCurrentMonitor());
-        int monitor_height = GetMonitorHeight(GetCurrentMonitor());     
-
-        render_chip8_viewport(0, 0, window_width, window_height);
+        render_chip8_viewport(scr, 0, 0, window_width, window_height);
     } 
 
 
@@ -114,10 +90,10 @@ void render_window() {
     
 }
 
-void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_height) {
+void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_width, int view_height) {
 
     if (!fullscreen) {
-        GuiPanel(chip8_screen, "CHIP-8");
+        GuiPanel(chip8_screen, "Video");
     }
 
 
@@ -130,34 +106,34 @@ void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_
 
     bool* curr_plane1;
     bool* curr_plane2;
-    uint8_t* megachip_screen = chip8.scr.megachip_scr;
+    uint8_t* megachip_screen = scr.megachip_scr;
 
-    if (!chip8.scr.hires) {
+    if (!scr.hires) {
         curr_dim = LORES_DIM;
         curr_height = LORES_HEIGHT;
         curr_width = LORES_WIDTH;
-        curr_plane1 = chip8.scr.lores_p1;
-        curr_plane2 = chip8.scr.lores_p2;
+        curr_plane1 = scr.lores_p1;
+        curr_plane2 = scr.lores_p2;
     } else {
         curr_dim = HIRES_DIM;
         curr_height = HIRES_HEIGHT;
         curr_width = HIRES_WIDTH;
-        curr_plane1 = chip8.scr.hires_p1;
-        curr_plane2 = chip8.scr.hires_p2;
+        curr_plane1 = scr.hires_p1;
+        curr_plane2 = scr.hires_p2;
     }
 
-    if (chip8.scr.megachip_mode) {
+    if (scr.megachip_mode) {
         curr_dim = MEGACHIP_DIM;
         curr_height = MEGACHIP_HEIGHT;
         curr_width = MEGACHIP_WIDTH;
     }
 
-    curr_pix_x = view_width / curr_width;
-    curr_pix_y = view_height / curr_height;
+    float scale_x = (float)view_width / curr_width;
+    float scale_y = (float)view_height / curr_height;
 
     for (int i = 0; i < curr_dim; i++) {
         
-        if (!chip8.scr.megachip_mode) {
+        if (!scr.megachip_mode) {
             uint8_t p1 = curr_plane1[i];
             uint8_t p2 = curr_plane2[i];
 
@@ -177,9 +153,9 @@ void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_
 
             //ARGB FORMAT
 
-            uint8_t color_idx = chip8.scr.megachip_scr[i];
+            uint8_t color_idx = scr.megachip_scr[i];
             
-            uint32_t color = (color_idx < MEGACHIP_COLORS) ? chip8.scr.palette[color_idx] : 0xFF000000;
+            uint32_t color = (color_idx < MEGACHIP_COLORS) ? scr.palette[color_idx] : 0xFF000000;
 
             uint8_t alpha = color >> 24;
             uint8_t red = (color >> 16) & 0xFF;
@@ -188,10 +164,34 @@ void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_
             
             curr_color = {red, green, blue, alpha};
         }
-        DrawRectangle(x_offset + ((i % curr_width) * curr_pix_x), 
-                          y_offset + ((i / curr_width) * curr_pix_y), 
-                          curr_pix_x, curr_pix_y, curr_color);
+
+
+        int screen_x = i % curr_width;
+        int screen_y = i / curr_width;
+
+        int draw_x_start = x_offset + (int)(screen_x * scale_x);
+        int draw_y_start = y_offset + (int)(screen_y * scale_y);
+        
+        int draw_x_end = x_offset + (int)((screen_x + 1) * scale_x);
+        int draw_y_end = y_offset + (int)((screen_y + 1) * scale_y);
+
+        int draw_width = draw_x_end - draw_x_start;
+        int draw_height = draw_y_end - draw_y_start;
+
+        DrawRectangle(draw_x_start, 
+                      draw_y_start, 
+                      draw_width, 
+                      draw_height, 
+                      curr_color);
     }
+
+}
+
+void render_disassembly_viewport(int x_offset, int y_offset, int view_width, int view_height) {
+    
+}
+
+void render_memory_viewport(int x_offset, int y_offset, int view_width, int view_height) {
 
 }
 
@@ -219,40 +219,37 @@ void handle_window_input() {
         current_Pallete = palette4;
     }
 
-    if (IsKeyPressed(KEY_TAB)) {
-        if (!viewport_info) {
-            viewport_info = true;
-        } else {
-            viewport_info = false;
-        }
+    if (IsKeyPressed(KEY_B)) {
+        chip8.init();
     }
 
     if (IsKeyPressed(KEY_LEFT_SHIFT)) {
         fullscreen = !fullscreen;
+        int monitor_w = GetMonitorWidth(GetCurrentMonitor());
+        int monitor_h = GetMonitorHeight(GetCurrentMonitor());
+        window_width = monitor_w;
+        window_height = monitor_h;
         ToggleFullscreen();
     }
 }
 
-void update_window_dimensions(bool fullscreen) {
-    
+void handle_game_input() {
 
-    if (IsWindowResized()) {
-        
+    chip8.keys[0x1] = IsKeyDown(KEY_ONE);
+    chip8.keys[0x2] = IsKeyDown(KEY_TWO);
+    chip8.keys[0x3] = IsKeyDown(KEY_THREE);
+    chip8.keys[0xC] = IsKeyDown(KEY_FOUR);
+    chip8.keys[0x4] = IsKeyDown(KEY_Q);
+    chip8.keys[0x5] = IsKeyDown(KEY_W);
+    chip8.keys[0x6] = IsKeyDown(KEY_E);
+    chip8.keys[0xD] = IsKeyDown(KEY_R);
+    chip8.keys[0x7] = IsKeyDown(KEY_A);
+    chip8.keys[0x8] = IsKeyDown(KEY_S);
+    chip8.keys[0x9] = IsKeyDown(KEY_D);
+    chip8.keys[0xE] = IsKeyDown(KEY_F);
+    chip8.keys[0xA] = IsKeyDown(KEY_Z);
+    chip8.keys[0x0] = IsKeyDown(KEY_X);
+    chip8.keys[0xB] = IsKeyDown(KEY_C);
+    chip8.keys[0xF] = IsKeyDown(KEY_V);
 
-        int new_width = GetScreenWidth();
-        int new_height = GetScreenHeight();
-
-        if (!fullscreen) {
-
-            /*
-            graphics_plane.width = new_width - (padding * 2);
-
-            int graphics_plane_y = chip8_screen.y + chip8_screen.height + padding;
-            int graphics_plane_height = SCREEN_HEIGHT - graphics_plane_y - padding;
-
-            graphics_plane.height = graphics_plane_height;
-            */
-
-        }
-    }
-}
+} 

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string.h>
 
 const int LORES_WIDTH = 64;
 const int LORES_HEIGHT = 32;
@@ -17,13 +18,20 @@ const int MEGACHIP_DIM = MEGACHIP_WIDTH * MEGACHIP_HEIGHT;
 
 const int MEGACHIP_COLORS = 255;
 
+class cpu;
+
 class graphics {
     private:
 
         uint8_t* m_mem_ptr;
+        cpu* m_cpu_ptr;
+
     public:
 
-        graphics(uint8_t* mem_ptr) : m_mem_ptr(mem_ptr) {}
+        graphics() {}
+
+        graphics(uint8_t* mem_ptr, cpu* cpu_ptr) 
+        : m_mem_ptr(mem_ptr), m_cpu_ptr(cpu_ptr) {}
 
         //bitplanes
 
@@ -44,6 +52,7 @@ class graphics {
 
         uint8_t b_mode;
 
+        bool draw_flag = false;
         bool megachip_mode;
         bool hires;
         uint8_t selected_plane;

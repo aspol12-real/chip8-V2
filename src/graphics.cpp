@@ -1,4 +1,5 @@
 #include "graphics.hpp"
+#include "cpu.hpp"
 
 void graphics::clear_all() {
 
@@ -11,33 +12,44 @@ void graphics::clear_all() {
         hires_p1[i] = false;
         hires_p2[i] = false;
     }
+    for (int i = 0; i <= MEGACHIP_COLORS; i++) {
+            palette[i] = 0;
+    }
+    int size_bytes = MEGACHIP_DIM * sizeof(uint8_t);
+    memset(megachip_scr, 0, size_bytes);
+
 
 }
 
 void graphics::clear_plane() {
 
-    if(!hires) {
-        for (int i = 0; i < LORES_DIM; i++) {
-            if (selected_plane == 1) {
-                lores_p1[i] = false;
-            } else if (selected_plane == 2) {
-                lores_p2[i] = false;
-            } else if (selected_plane == 3) {
-                lores_p1[i] = false;
-                lores_p2[i] = false;
+    if(!megachip_mode) {
+        if(!hires) {
+            for (int i = 0; i < LORES_DIM; i++) {
+                if (selected_plane == 1) {
+                    lores_p1[i] = false;
+                } else if (selected_plane == 2) {
+                    lores_p2[i] = false;
+                } else if (selected_plane == 3) {
+                    lores_p1[i] = false;
+                    lores_p2[i] = false;
+                }
             }
+        } else {
+        for (int i = 0; i < HIRES_DIM; i++) {
+                if (selected_plane == 1) {
+                    hires_p1[i] = false;
+                } else if (selected_plane == 2) {
+                    hires_p2[i] = false;
+                } else if (selected_plane == 3) {
+                    hires_p1[i] = false;
+                    hires_p2[i] = false;
+                }
+            } 
         }
     } else {
-       for (int i = 0; i < HIRES_DIM; i++) {
-            if (selected_plane == 1) {
-                hires_p1[i] = false;
-            } else if (selected_plane == 2) {
-                hires_p2[i] = false;
-            } else if (selected_plane == 3) {
-                hires_p1[i] = false;
-                hires_p2[i] = false;
-            }
-        } 
+        int size_bytes = MEGACHIP_DIM * sizeof(uint8_t);
+        memset(megachip_scr, 0, size_bytes);
     }
 
 }
@@ -87,6 +99,7 @@ bool graphics::draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
             }
         }
     }
+
     return collision_flag;
 }
 
@@ -140,6 +153,7 @@ bool graphics::draw_sprite16(uint8_t x, uint8_t y, uint16_t I) {
             }
         }
     }
+
     return collision_flag;
 
 }
@@ -210,11 +224,11 @@ bool graphics::get_pixel(int offset) {
     if (!hires) {
         if (selected_plane == 1) return lores_p1[offset];
         if (selected_plane == 2) return lores_p2[offset];
-        if (selected_plane == 3) return lores_p1[offset] || lores_p2[offset];
+        if (selected_plane == 3) return lores_p1[offset] && lores_p2[offset];
     } else {
         if (selected_plane == 1) return hires_p1[offset];
         if (selected_plane == 2) return hires_p2[offset];
-        if (selected_plane == 3) return hires_p1[offset] || hires_p2[offset];
+        if (selected_plane == 3) return hires_p1[offset] && hires_p2[offset];
     }
     return false;
 }
@@ -256,4 +270,5 @@ bool graphics::draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint16
     }
 
     return collision_flag;
+
 }

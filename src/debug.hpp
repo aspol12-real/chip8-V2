@@ -6,6 +6,9 @@
 int SCREEN_HEIGHT = 600;
 int SCREEN_WIDTH = 960;
 
+int chip8_width = 712;
+int chip8_height = 356;
+
 std::array<Color, 4> palette1 = {{
     {244, 233, 205, 255},
     {119, 172, 62, 255},
@@ -36,40 +39,40 @@ std::array<Color, 4> palette4 = {{
 
 std::array<Color, 4> current_Pallete = palette1;
 
-//function declarations!
-
-void render_chip8_viewport(int x_offset, int y_offset, int view_width, int view_height);
 void handle_window_input();
-void update_window_dimensions(bool fullscreen);;
 
 
-int padding = 17;
+int padding = 6;
 float titleBarHeight = 24;
 
-Rectangle chip8_screen = {(float)padding, (float)padding, 512, 256 + titleBarHeight};
-
-
-int graphics_plane_y = chip8_screen.y + chip8_screen.height + padding;
-int graphics_plane_height = SCREEN_HEIGHT - graphics_plane_y - padding;
-
-Rectangle graphics_plane = {
+Rectangle chip8_screen = {
     (float)padding, 
-    (float)graphics_plane_y, 
-    512,
-    (float)graphics_plane_height
+    (float)padding, 
+    (float)chip8_width, 
+    (float)chip8_height + (titleBarHeight * 2)
 };
 
 
-int tabs_x = chip8_screen.x + chip8_screen.width + padding;
-int tabs_width = SCREEN_WIDTH - tabs_x - padding;
+int disassembly_x = chip8_screen.x + chip8_screen.width + padding;
+int disassembly_width = SCREEN_WIDTH - disassembly_x - padding;
+int disassembly_height = SCREEN_HEIGHT - padding;
 
-Rectangle tabs = {
-    (float)tabs_x,
+Rectangle disassembly = {
+    (float)disassembly_x,
     (float)padding, 
-    (float)tabs_width,
-    40 
+    (float)disassembly_width,
+    (float)disassembly_height
+};
+
+int memory_plane_y = chip8_screen.y + chip8_screen.height + padding ;
+int memory_plane_height = SCREEN_HEIGHT - memory_plane_y - padding;
+int memory_plane_width = SCREEN_WIDTH - (padding * 3) - disassembly_width;
+
+Rectangle memory_plane = {
+    (float)padding, 
+    (float)memory_plane_y, 
+    (float)memory_plane_width,
+    (float)memory_plane_height
 };
 
 Vector2 mousePosition = { 0 };
-bool dragWindow = false;
-Vector2 panOffset = mousePosition;

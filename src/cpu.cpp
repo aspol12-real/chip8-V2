@@ -11,10 +11,10 @@ void cpu::init() {
     delay = 0;
     sound = 0;
 
-    scr.selected_plane = 3;
-    scr.hires = false;
-    scr.megachip_mode = false;
-    scr.palette[0] = 0;
+    scr_ptr->selected_plane = 3;
+    scr_ptr->hires = false;
+    scr_ptr->megachip_mode = false;
+    scr_ptr->palette[0] = 0;
 
     for (int i = 0; i < 16; i++) {
         v[i] = 0;
@@ -25,7 +25,7 @@ void cpu::init() {
         mem[i] = font_data[i];
     }
 
-    scr.clear_all();
+    scr_ptr->clear_all();
     std::srand(std::time(nullptr));
 
 }
@@ -71,17 +71,14 @@ void cpu::load_rom(std::string rom) {
 void cpu::tick_timers() {
 
     if (delay > 0) {
-            delay--;
-        }
+        delay--;
+    }
     if (sound > 0) {
         sound--;
     }
 
 
 }
-
-
-
 
 
 void cpu::execute() {
@@ -101,7 +98,6 @@ void cpu::execute() {
     pc += 2; //post fetch increment!
 
     //decode / execute
-
     switch (inst) {
   
         case 0x0: 
@@ -109,12 +105,12 @@ void cpu::execute() {
             switch(x) { //0x00
                 case 0x1: ld_i_nnnnnn(nn); break;
                 case 0x2: ld_i_palette(nn); break;
-                case 0x3: scr.sprw = nn; break;
-                case 0x4: scr.sprh = nn; break;
-                case 0x5: scr.alpha = nn; break;
+                case 0x3: scr_ptr->sprw = nn; break;
+                case 0x4: scr_ptr->sprh = nn; break;
+                case 0x5: scr_ptr->alpha = nn; break;
                 // 0x6 sound
                 // 0x7 sound
-                case 0x8: scr.b_mode = n; break;
+                case 0x8: scr_ptr->b_mode = n; break;
             }
             
             if ((nn >> 4) == 0xC) {}
@@ -122,15 +118,15 @@ void cpu::execute() {
 
             switch (nn) {
 
-                case 0x10: scr.megachip_mode = false; break;
-                case 0x11: scr.megachip_mode = true; break;
-                case 0xE0: scr.clear_plane(); break;
+                case 0x10: scr_ptr->megachip_mode = false; break;
+                case 0x11: scr_ptr->megachip_mode = true; break;
+                case 0xE0: scr_ptr->clear_plane(); break;
                 case 0xEE: ret(); break;
                 case 0xFB: break; //scroll right
                 case 0xFC: break; //scroll left
                 case 0xFD: std::cout << "EXITING... (0x00FD)\n"; exit( 1 );
-                case 0xFE: scr.hires = false; break;
-                case 0xFF: scr.hires = true; break;
+                case 0xFE: scr_ptr->hires = false; break;
+                case 0xFF: scr_ptr->hires = true; break;
 
             }
             break;
@@ -174,10 +170,10 @@ void cpu::execute() {
 
         case 0xD:
             if (n == 0) {
-                v[0xF] = scr.draw_sprite16(v[x], v[y], I);
+                v[0xF] = scr_ptr->draw_sprite16(v[x], v[y], I);
             }
             else {
-                v[0xF] = scr.draw_sprite8(v[x], v[y], n, I);
+                v[0xF] = scr_ptr->draw_sprite8(v[x], v[y], n, I);
             }
             break;
 
@@ -200,7 +196,7 @@ void cpu::execute() {
             switch (nn) {
 
                 case 0x00: word_index(); break;
-                case 0x01: scr.selected_plane = x; break;
+                case 0x01: scr_ptr->selected_plane = x; break;
                 //case 0x02: audio pattern into buffer
                 case 0x07: v[x] = delay; break;
                 case 0x0A: wait(x); break;
@@ -222,10 +218,6 @@ void cpu::execute() {
     }
 
 }
-
-
-
-
 
 
 void cpu::call(uint16_t nnn, uint16_t opcode) {
@@ -288,6 +280,7 @@ void cpu::reg_from_mem(uint8_t x, uint8_t y) {
     for (int i = x; i <= y; i++) {
         v[i] = mem[I + i];
     }
+
 }
 
 
@@ -450,6 +443,6 @@ void cpu::ld_i_palette(uint8_t nn) {
         
         uint32_t color = (alpha << 24) | (red << 16) | (green << 8) | blue;
 
-        scr.palette[i] = color;
+        scr_ptr->palette[i] = color;
     }
 }
