@@ -10,41 +10,48 @@
 #include "graphics.hpp"
 #include "sound.hpp"
 
-cpu chip8;
-
-int IPF = 11;  
-bool speed = false;
-bool viewport_info = false;
-bool fullscreen = false;
-int window_height = SCREEN_HEIGHT;
-int window_width = SCREEN_WIDTH;
 
 void render_window(graphics& scr);
 void handle_game_input();
 void render_disassembly_viewport(int x_offset, int y_offset, int view_width, int view_height);
 void render_memory_viewport(int x_offset, int y_offset, int view_width, int view_height);
 void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_width, int view_height);
+const char* get_dissassembly(int offset);
 
+cpu chip8;
+
+int IPF = 11;  //by default
+bool speed = false;
+bool viewport_info = false;
+bool fullscreen = false;
+bool run = true;
+int window_height = SCREEN_HEIGHT;
+int window_width = SCREEN_WIDTH;
+std::string rom;
+Font customfont;
 
 int main(int argc, char* argv[]) {
 
+
+    //one day this will not be necessary...
     if (argc < 2) {
         std::cout << "USAGE: ./chip8 [filename].ch8 \n";
         exit( 1 );
     }   
 
-    Font customfont = LoadFont("res/fonts/JetBrainsMono-Bold.ttf");
+
+    //  raylib/raygui setup
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "CHIP8");
     SetTargetFPS(60);
     GuiLoadStyleCherry();  
     GuiEnable();
+    customfont = LoadFont("res/fonts/JetBrainsMono-Bold.ttf");
 
     graphics scr(chip8.get_memory_ptr(), &chip8);
     chip8.set_graphics_ptr(&scr);
-    chip8.init();
 
-    std::string rom = argv[1];
-    chip8.load_rom(rom);
+    rom = argv[1];
+    chip8.init(rom);
 
     //everything that happens in the window
 
@@ -54,17 +61,19 @@ int main(int argc, char* argv[]) {
         handle_window_input();
         chip8.tick_timers();
 
-        for (int i = 0; i < IPF; i++) {
-            chip8.execute();
+        if (run) {
+            for (int i = 0; i < IPF; i++) {
+                chip8.execute();
+            }
         }
-
         render_window(scr); 
-
     }
 
     CloseWindow();
     return 0;
 }
+
+
 
 void render_window(graphics& scr) {
 
@@ -72,14 +81,13 @@ void render_window(graphics& scr) {
     mousePosition = GetMousePosition();
 
     BeginDrawing();
+
     ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
     if (!fullscreen) {
-        GuiPanel(memory_plane, "Memory");
-        GuiGroupBox(disassembly, "Disassembly");
-        if (scr.megachip_mode) {
-            chip8_screen.height = MEGACHIP_HEIGHT * 2 + titleBarHeight;
-        }
+
+        render_memory_viewport(memory_plane.x + 1, memory_plane.y + titleBarHeight, memory_plane.width - 2, memory_plane.height);
+        render_disassembly_viewport(disassembly.x + 1, disassembly.y + titleBarHeight, disassembly.width - 2, disassembly.height);
         render_chip8_viewport(scr, chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
     } else {
         render_chip8_viewport(scr, 0, 0, window_width, window_height);
@@ -90,13 +98,15 @@ void render_window(graphics& scr) {
     
 }
 
+
+
 void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_width, int view_height) {
 
     if (!fullscreen) {
-        GuiPanel(chip8_screen, "Video");
+        GuiPanel({chip8_screen.x, chip8_screen.y, chip8_screen.width, chip8_screen.height + titleBarHeight + 1}, "Video");
     }
 
-
+    BeginScissorMode(x_offset + 1, y_offset, view_width - 2, view_height);
     int curr_height;
     int curr_width;
     int curr_pix_x;
@@ -151,12 +161,11 @@ void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_w
             }
         } else { //megachip rendering enabled
 
-            //ARGB FORMAT
-
             uint8_t color_idx = scr.megachip_scr[i];
             
             uint32_t color = (color_idx < MEGACHIP_COLORS) ? scr.palette[color_idx] : 0xFF000000;
 
+            //unpack color bytes into raylib's RGBA format
             uint8_t alpha = color >> 24;
             uint8_t red = (color >> 16) & 0xFF;
             uint8_t green = (color >> 8) & 0xFF;
@@ -184,15 +193,30 @@ void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_w
                       draw_height, 
                       curr_color);
     }
+    EndScissorMode();
 
 }
 
+
+
 void render_disassembly_viewport(int x_offset, int y_offset, int view_width, int view_height) {
-    
+
+    GuiPanel(disassembly, "Disassembly");
+
+    BeginScissorMode(x_offset, y_offset, view_width, view_height);
+    DrawRectangle(x_offset, y_offset, view_width, view_height - (padding * 4 + 1), panel_bg_color);
+
+    for (int i = 0; i < 30 * 2; i += 2) {
+        DrawTextEx(customfont, get_dissassembly(i), (Vector2){(float)x_offset + 5.0f, (float)y_offset + ((i/2) * 25)}, 32, 2, GREEN);
+    }
+    EndScissorMode();
+
 }
 
 void render_memory_viewport(int x_offset, int y_offset, int view_width, int view_height) {
 
+    GuiPanel(memory_plane, "Memory");
+    DrawRectangle(x_offset, y_offset, view_width, view_height - (padding * 4 + 1), panel_bg_color);
 }
 
 void handle_window_input() {
@@ -220,9 +244,20 @@ void handle_window_input() {
     }
 
     if (IsKeyPressed(KEY_B)) {
-        chip8.init();
+        chip8.init(rom);
+    }
+    
+    if (IsKeyPressed(KEY_G)) {
+        if (!run) {
+            run = true;
+        } else {
+            run = false;
+        }
     }
 
+    if (IsKeyPressed(KEY_T)) {
+        chip8.execute();
+    }
     if (IsKeyPressed(KEY_LEFT_SHIFT)) {
         fullscreen = !fullscreen;
         int monitor_w = GetMonitorWidth(GetCurrentMonitor());
@@ -253,3 +288,102 @@ void handle_game_input() {
     chip8.keys[0xF] = IsKeyDown(KEY_V);
 
 } 
+
+const char* get_dissassembly(int offset) {
+
+    static char disassembly[64];
+
+    uint16_t opcode = (chip8.mem[chip8.pc + offset] << 8) | chip8.mem[chip8.pc + 1 + offset];
+    uint8_t inst    = (opcode >> 12);
+    uint8_t x       = (opcode & 0x0F00) >> 8;
+    uint8_t y       = (opcode & 0x00F0) >> 4;
+    uint8_t n       = (opcode & 0x000F);
+    uint8_t nn      = (opcode & 0x00FF);
+    uint16_t nnn    = (opcode & 0x0FFF);
+    uint32_t nnnnnn = (nn << 16 & opcode);
+    uint32_t byte_3 = chip8.mem[chip8.pc + 2 + offset];
+    uint32_t byte_4 = chip8.mem[chip8.pc + 3 + offset];
+
+
+    int len = std::sprintf(disassembly, "%04X: ", opcode);
+    char* mnemonic_ptr = disassembly + len;
+
+
+    switch (inst) {
+        case 0x0:
+
+            switch(x) {
+                case 0x1:
+
+                    uint32_t nnnnnn = (nn << 16) | (byte_3 << 8) | byte_4;
+                    std::sprintf(mnemonic_ptr, "LD I, 0x%06X", nnnnnn);
+                    break;
+            }
+            if (nnn == 0x0E0) {
+                std::sprintf(mnemonic_ptr, "CLS");
+            } else if (nnn == 0x0EE) {
+
+                std::sprintf(mnemonic_ptr, "RET");
+            }
+            break;
+        case 0x1: std::sprintf(mnemonic_ptr, "JP 0x%03X", nnn); break;
+        case 0x2: std::sprintf(mnemonic_ptr, "CALL 0x%03X", nnn); break;
+        case 0x3: std::sprintf(mnemonic_ptr, "SE V%x, 0x%02X", x, nn); break;
+        case 0x4: std::sprintf(mnemonic_ptr, "SNE V%x, 0x%02X", x, nn); break;
+
+        case 0x5: 
+            switch(n) {
+                case 0x0: std::sprintf(mnemonic_ptr, "SE V%x, v%x", x, y); break;
+                case 0x2: std::sprintf(mnemonic_ptr, "STORE V%x, v%x", x, y); break;
+                case 0x3: std::sprintf(mnemonic_ptr, "GET V%x, v%x", x, y); break;
+            }
+            break;
+
+        case 0x6: std::sprintf(mnemonic_ptr, "LD V%x, 0x%02X", x, nn); break;
+        case 0x7: std::sprintf(mnemonic_ptr, "V%x += %02X", x, nn); break;
+
+        case 0x8:
+            switch (n) {
+                case 0x0: std::sprintf(mnemonic_ptr, "V%x = V%x", x, y); break;
+                case 0x1: std::sprintf(mnemonic_ptr, "V%x | V%x", x, y); break;
+                case 0x2: std::sprintf(mnemonic_ptr, "V%x & V%x", x, y); break;
+                case 0x3: std::sprintf(mnemonic_ptr, "V%x ^ V%x", x, y); break;
+                case 0x4: std::sprintf(mnemonic_ptr, "V%x + V%x", x, y); break;
+                case 0x5: std::sprintf(mnemonic_ptr, "V%x - V%x", x, y); break;
+                case 0x6: std::sprintf(mnemonic_ptr, "V%x >> 1", x); break;
+                case 0x7: std::sprintf(mnemonic_ptr, "V%x - V%x", y, x); break;
+                case 0xE: std::sprintf(mnemonic_ptr, "V%x << 1", x); break;
+
+                default:
+                    std::sprintf(mnemonic_ptr, "UNKNOWN (0x%04X)", opcode);
+            }
+            break;
+
+        case 0x9: std::sprintf(mnemonic_ptr, "SNE V%x,  V%x", x, y); break;
+        case 0xA: std::sprintf(mnemonic_ptr, "LD I, 0x%03X", nnn); break;
+        case 0xB: std::sprintf(mnemonic_ptr, "PC = %03X + v0", nn); break;
+        case 0xC: std::sprintf(mnemonic_ptr, "RAND & V%x", x); break;
+        case 0xD: std::sprintf(mnemonic_ptr, "DRAW V%X, V%X, %X", x, y, n); break;
+        case 0xE:
+            if (nn == 0x9E) {
+                std::sprintf(mnemonic_ptr, "SKIP PRESSED V%x", x);
+            } else if (nn == 0xA1) {
+                std::sprintf(mnemonic_ptr, "SKIP NOT PRESSED V%x", x);
+            }
+            break;
+        case 0xF:
+            switch(nn) {
+                case 0x0: 
+                    uint16_t nnnn = (byte_3 << 8) | byte_4;
+                    std::sprintf(mnemonic_ptr, "LD I, 0x%04X", nnnn);
+                    break;
+
+            } 
+            break;
+        default:
+            std::sprintf(mnemonic_ptr, "UNKNOWN (0x%04X)", opcode);
+            break;
+    }
+
+    return disassembly;
+}

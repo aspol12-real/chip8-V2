@@ -47,10 +47,13 @@ void graphics::clear_plane() {
                 }
             } 
         }
-    } else {
+    } 
+
+    else {
         int size_bytes = MEGACHIP_DIM * sizeof(uint8_t);
         memset(megachip_scr, 0, size_bytes);
     }
+
 
 }
 

@@ -1,6 +1,6 @@
 #include "cpu.hpp"
 
-void cpu::init() {
+void cpu::init(std::string rom) {
 
     //init registers
 
@@ -16,6 +16,17 @@ void cpu::init() {
     scr_ptr->megachip_mode = false;
     scr_ptr->palette[0] = 0;
 
+    //empty ram
+    for (int i = 0; i < MEGACHIP_SIZE; i++) {
+        mem[i] = 0;
+    }
+
+    //empty stack
+    for (int i = 0; i < STACK_SIZE; i++) {
+        stack[i] = 0;
+    }
+
+    //empty cpu regs
     for (int i = 0; i < 16; i++) {
         v[i] = 0;
     }
@@ -25,9 +36,11 @@ void cpu::init() {
         mem[i] = font_data[i];
     }
 
-    scr_ptr->clear_all();
-    std::srand(std::time(nullptr));
+    scr_ptr->clear_all(); //clear screen buffers
 
+    std::srand(std::time(nullptr)); //reseed random number generator
+
+    load_rom(rom); //load rom into memory
 }
 
 void cpu::load_rom(std::string rom) {
@@ -195,7 +208,13 @@ void cpu::execute() {
         case 0xF:
             switch (nn) {
 
-                case 0x00: word_index(); break;
+                case 0x00:
+                    if (scr_ptr->megachip_mode) {
+                        word_index(); 
+                    } else {
+                        ld_i_nnnnnn(nn);
+                    }
+                break;
                 case 0x01: scr_ptr->selected_plane = x; break;
                 //case 0x02: audio pattern into buffer
                 case 0x07: v[x] = delay; break;

@@ -26,6 +26,14 @@ class graphics {
         uint8_t* m_mem_ptr;
         cpu* m_cpu_ptr;
 
+
+        bool collision(int offset);
+        void pix_to_plane(int offset);
+        bool get_pixel(int offset);
+
+
+        //megachip 
+        bool draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint16_t I);
     public:
 
         graphics() {}
@@ -57,13 +65,6 @@ class graphics {
         bool hires;
         uint8_t selected_plane;
 
-        bool draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I);
-        bool draw_sprite16(uint8_t x, uint8_t y, uint16_t I);
-
-        bool collision(int offset);
-        void pix_to_plane(int offset);
-        bool get_pixel(int offset);
-
         void clear_all();
         void clear_plane();
 
@@ -72,6 +73,6 @@ class graphics {
         void scroll_down(uint8_t n);
         void scroll_up_schip(uint8_t n);
 
-        //megachip 
-        bool draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint16_t I);
+        bool draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I);
+        bool draw_sprite16(uint8_t x, uint8_t y, uint16_t I);
 };

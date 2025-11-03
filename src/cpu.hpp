@@ -17,17 +17,6 @@ const int STACK_SIZE = 16;
 class cpu {
     private:
 
-
-        uint8_t mem[MEGACHIP_SIZE]; //65kb memory space (XO-CHIP spec)
-        uint16_t stack[STACK_SIZE];
-        uint8_t v[16]; //16 8-bit registers v0-vF
-        uint8_t flags_storage[16];
-
-        uint16_t pc; //16-bit program counter
-        uint16_t sp; //16-bit stack pointer
-        uint32_t I;  //16-bit memory pointer
-
-
         uint8_t font_data[240] = {
         
             // regular characters 0-F
@@ -95,6 +84,7 @@ class cpu {
         //megachip opcodes
         void ld_i_nnnnnn(uint8_t nn);
         void ld_i_palette(uint8_t nn);
+        
 
     public:
 
@@ -107,15 +97,26 @@ class cpu {
         uint8_t* get_memory_ptr() {
             return mem;
         }
+
         cpu() {}
+
+        uint8_t mem[MEGACHIP_SIZE]; //33mb megachip size
+        uint16_t stack[STACK_SIZE];
+        uint8_t v[16]; //16 8-bit registers v0-vF
+        uint8_t flags_storage[16];
+
+        uint16_t pc; //16-bit program counter
+        uint16_t sp; //16-bit stack pointer
+        uint32_t I;  //16-bit memory pointer
+
         uint8_t sound; //8-bit sound timer
         uint8_t delay; //8-bit delay timer
 
         bool keys[16];
 
-        void init();
-        void execute();
+        void init(std::string rom);
         void load_rom(std::string rom);
+        void execute();
         void tick_timers();
         
 };
