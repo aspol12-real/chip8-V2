@@ -53,14 +53,14 @@ class graphics {
 
         //megachip
         uint8_t megachip_scr[MEGACHIP_DIM];
+        uint8_t megachip_scrbuffer[MEGACHIP_DIM];
         uint32_t palette[MEGACHIP_COLORS];
-        uint8_t sprw;
-        uint8_t sprh;
+        uint16_t sprw;
+        uint16_t sprh;
         uint8_t alpha;
 
         uint8_t b_mode;
 
-        bool draw_flag = false;
         bool megachip_mode;
         bool hires;
         uint8_t selected_plane;

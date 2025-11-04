@@ -118,8 +118,8 @@ void cpu::execute() {
             switch(x) { //0x00
                 case 0x1: ld_i_nnnnnn(nn); break;
                 case 0x2: ld_i_palette(nn); break;
-                case 0x3: scr_ptr->sprw = nn; break;
-                case 0x4: scr_ptr->sprh = nn; break;
+                case 0x3: scr_ptr->sprw = (nn == 0) ? 256 : nn; break;
+                case 0x4: scr_ptr->sprh = (nn == 0) ? 256 : nn; break;
                 case 0x5: scr_ptr->alpha = nn; break;
                 // 0x6 sound
                 // 0x7 sound
@@ -208,13 +208,7 @@ void cpu::execute() {
         case 0xF:
             switch (nn) {
 
-                case 0x00:
-                    if (scr_ptr->megachip_mode) {
-                        word_index(); 
-                    } else {
-                        ld_i_nnnnnn(nn);
-                    }
-                break;
+                case 0x00: word_index(); break;
                 case 0x01: scr_ptr->selected_plane = x; break;
                 //case 0x02: audio pattern into buffer
                 case 0x07: v[x] = delay; break;
@@ -451,9 +445,11 @@ void cpu::ld_i_nnnnnn(uint8_t nn) {
 }
 
 void cpu::ld_i_palette(uint8_t nn) {
+
     for (int i = 1; i <= nn; i++) {
 
-        uint32_t offset = I + (i) * 4;
+        
+        uint32_t offset = I + (i - 1) * 4;
 
         uint8_t alpha = mem[offset];     // alpha (byte 0)
         uint8_t red   = mem[offset + 1]; // red (byte 1)

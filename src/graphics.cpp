@@ -50,6 +50,9 @@ void graphics::clear_plane() {
     } 
 
     else {
+        for (int i = 0; i < MEGACHIP_DIM; i++) {
+            megachip_scrbuffer[i] = megachip_scr[i];
+        }
         int size_bytes = MEGACHIP_DIM * sizeof(uint8_t);
         memset(megachip_scr, 0, size_bytes);
     }

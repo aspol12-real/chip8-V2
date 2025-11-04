@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
                 chip8.execute();
             }
         }
-        render_window(scr); 
+        render_window(scr);  
     }
 
     CloseWindow();
@@ -88,6 +88,7 @@ void render_window(graphics& scr) {
 
         render_memory_viewport(memory_plane.x + 1, memory_plane.y + titleBarHeight, memory_plane.width - 2, memory_plane.height);
         render_disassembly_viewport(disassembly.x + 1, disassembly.y + titleBarHeight, disassembly.width - 2, disassembly.height);
+        GuiPanel({chip8_screen.x, chip8_screen.y, chip8_screen.width, chip8_screen.height + titleBarHeight + 1}, "Video");
         render_chip8_viewport(scr, chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
     } else {
         render_chip8_viewport(scr, 0, 0, window_width, window_height);
@@ -101,10 +102,6 @@ void render_window(graphics& scr) {
 
 
 void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_width, int view_height) {
-
-    if (!fullscreen) {
-        GuiPanel({chip8_screen.x, chip8_screen.y, chip8_screen.width, chip8_screen.height + titleBarHeight + 1}, "Video");
-    }
 
     BeginScissorMode(x_offset + 1, y_offset, view_width - 2, view_height);
     int curr_height;
@@ -161,9 +158,14 @@ void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_w
             }
         } else { //megachip rendering enabled
 
-            uint8_t color_idx = scr.megachip_scr[i];
-            
-            uint32_t color = (color_idx < MEGACHIP_COLORS) ? scr.palette[color_idx] : 0xFF000000;
+            uint8_t color_idx = scr.megachip_scrbuffer[i];
+            uint32_t color;
+
+            if (color_idx == 0) {
+                color = 0;
+            }
+
+            color = scr.palette[color_idx];
 
             //unpack color bytes into raylib's RGBA format
             uint8_t alpha = color >> 24;
@@ -314,10 +316,18 @@ const char* get_dissassembly(int offset) {
 
             switch(x) {
                 case 0x1:
-
+                    {
                     uint32_t nnnnnn = (nn << 16) | (byte_3 << 8) | byte_4;
                     std::sprintf(mnemonic_ptr, "LD I, 0x%06X", nnnnnn);
                     break;
+                    }
+                case 0x2: std::sprintf(mnemonic_ptr, "LD PALETTE, %02X", nn); break;
+                case 0x3: std::sprintf(mnemonic_ptr, "SPRW = %02X", nn); break;
+                case 0x4: std::sprintf(mnemonic_ptr, "SPRH = %02X", nn); break;
+                case 0x5: std::sprintf(mnemonic_ptr, "ALPHA = %02X", nn); break;
+
+
+                case 0x8: std::sprintf(mnemonic_ptr, "BLEND = %X", n); break;
             }
             if (nnn == 0x0E0) {
                 std::sprintf(mnemonic_ptr, "CLS");
@@ -373,11 +383,13 @@ const char* get_dissassembly(int offset) {
             break;
         case 0xF:
             switch(nn) {
-                case 0x0: 
+                case 0x00: 
+                    {
                     uint16_t nnnn = (byte_3 << 8) | byte_4;
                     std::sprintf(mnemonic_ptr, "LD I, 0x%04X", nnnn);
                     break;
-
+                    }
+                case 0x1E: std::sprintf(mnemonic_ptr, "I += V%x", x); break;
             } 
             break;
         default:
