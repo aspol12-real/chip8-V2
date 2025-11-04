@@ -65,6 +65,8 @@ class cpu {
         void jneq(uint8_t a, uint8_t b);
         void reg_to_mem(uint8_t x, uint8_t y);
         void reg_from_mem(uint8_t x, uint8_t y);
+        void reg_to_mem_5xy2(uint8_t x, uint8_t y);
+        void reg_from_mem_5xy3(uint8_t x, uint8_t y);
         void reg_to_flags(uint8_t x, uint8_t y);
         void reg_from_flags(uint8_t x, uint8_t y);
         void add(uint8_t x, uint8_t y);

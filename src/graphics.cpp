@@ -13,10 +13,11 @@ void graphics::clear_all() {
         hires_p2[i] = false;
     }
     for (int i = 0; i <= MEGACHIP_COLORS; i++) {
-            palette[i] = 0;
+        palette[i] = 0;
     }
     int size_bytes = MEGACHIP_DIM * sizeof(uint8_t);
     memset(megachip_scr, 0, size_bytes);
+    memset(megachip_scrbuffer, 0, size_bytes);
 
 
 }
@@ -60,7 +61,7 @@ void graphics::clear_plane() {
 
 }
 
-bool graphics::draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
+bool graphics::draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint32_t I) {
 
     if (megachip_mode) {
         return draw_sprite_megachip(x, y, height, I);
@@ -109,7 +110,7 @@ bool graphics::draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
     return collision_flag;
 }
 
-bool graphics::draw_sprite16(uint8_t x, uint8_t y, uint16_t I) {
+bool graphics::draw_sprite16(uint8_t x, uint8_t y, uint32_t I) {
 
     if (megachip_mode) {
         return false;
@@ -247,9 +248,7 @@ void graphics::scroll_up_schip(uint8_t n) {
 
 }
 
-bool graphics::draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint16_t I) {
-
-
+bool graphics::draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint32_t I) {
 
     bool collision_flag = false;
     for (int i = 0; i < sprh; i++) {

@@ -33,7 +33,7 @@ class graphics {
 
 
         //megachip 
-        bool draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint16_t I);
+        bool draw_sprite_megachip(uint8_t x, uint8_t y, uint8_t height, uint32_t I);
     public:
 
         graphics() {}
@@ -73,6 +73,6 @@ class graphics {
         void scroll_down(uint8_t n);
         void scroll_up_schip(uint8_t n);
 
-        bool draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint16_t I);
-        bool draw_sprite16(uint8_t x, uint8_t y, uint16_t I);
+        bool draw_sprite8(uint8_t x, uint8_t y, uint8_t height, uint32_t I);
+        bool draw_sprite16(uint8_t x, uint8_t y, uint32_t I);
 };

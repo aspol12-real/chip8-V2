@@ -152,8 +152,8 @@ void cpu::execute() {
         case 0x5: 
             switch(n) {
                 case 0x0: jeq(v[x], v[y]); break;
-                case 0x2: reg_to_mem(x, y); break;
-                case 0x3: reg_from_mem(x, y); break;
+                case 0x2: reg_to_mem_5xy2(x, y); break;
+                case 0x3: reg_from_mem_5xy3(x, y); break;
             }
             break;
         
@@ -280,6 +280,28 @@ void cpu::jneq(uint8_t a, uint8_t b) {
 
 }
 
+void cpu::reg_to_mem_5xy2(uint8_t x, uint8_t y) {
+
+    uint8_t start = (x < y) ? x : y;
+    uint8_t end = (x < y) ? y : x;
+
+    for (int i = start; i <= end; i++) {
+        uint8_t offset = i - start; 
+        mem[I + offset] = v[i];
+    }
+}
+
+void cpu::reg_from_mem_5xy3(uint8_t x, uint8_t y) {
+
+    uint8_t start = (x < y) ? x : y;
+    uint8_t end = (x < y) ? y : x;
+
+    for (int i = start; i <= end; i++) {
+        uint8_t offset = i - start; 
+        v[i] = mem[I + offset];
+    }
+}
+
 void cpu::reg_to_mem(uint8_t x, uint8_t y) {
 
     for (int i = x; i <= y; i++) {
@@ -295,8 +317,6 @@ void cpu::reg_from_mem(uint8_t x, uint8_t y) {
     }
 
 }
-
-
 //arithmetic
 
 void cpu::add(uint8_t x, uint8_t y) {
@@ -420,6 +440,7 @@ void cpu::wait(uint8_t x) {
 
 void cpu::reg_to_flags(uint8_t x, uint8_t y) {
 
+    std::cout << "to flags\n"; 
     for (int i = x; i <= y; i++) {
         flags_storage[I + i] = v[i];
     }
@@ -428,9 +449,11 @@ void cpu::reg_to_flags(uint8_t x, uint8_t y) {
 
 void cpu::reg_from_flags(uint8_t x, uint8_t y) {
 
+    std::cout << "from flags\n"; 
     for (int i = x; i <= y; i++) {
         v[i] = flags_storage[I + i];
     }
+
 }
 
 void cpu::ld_i_nnnnnn(uint8_t nn) {

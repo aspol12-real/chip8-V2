@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     SetTargetFPS(60);
     GuiLoadStyleCherry();  
     GuiEnable();
-    customfont = LoadFont("res/fonts/JetBrainsMono-Bold.ttf");
+    customfont = LoadFont("res/fonts/JetBrainsMono-Regular.ttf");
 
     graphics scr(chip8.get_memory_ptr(), &chip8);
     chip8.set_graphics_ptr(&scr);
@@ -86,9 +86,15 @@ void render_window(graphics& scr) {
 
     if (!fullscreen) {
 
+        if (scr.megachip_mode) {
+            chip8_screen.height = MEGACHIP_HEIGHT * 3 + titleBarHeight;
+            memory_plane.y = chip8_screen.y + chip8_screen.height + (padding * 5);
+            memory_plane.height = SCREEN_HEIGHT - memory_plane_y - 176 + padding;
+        }
         render_memory_viewport(memory_plane.x + 1, memory_plane.y + titleBarHeight, memory_plane.width - 2, memory_plane.height);
         render_disassembly_viewport(disassembly.x + 1, disassembly.y + titleBarHeight, disassembly.width - 2, disassembly.height);
         GuiPanel({chip8_screen.x, chip8_screen.y, chip8_screen.width, chip8_screen.height + titleBarHeight + 1}, "Video");
+        GuiGroupBox(control_bar, "CONTROL");
         render_chip8_viewport(scr, chip8_screen.x, chip8_screen.y + titleBarHeight, chip8_screen.width, chip8_screen.height);
     } else {
         render_chip8_viewport(scr, 0, 0, window_width, window_height);
@@ -195,6 +201,11 @@ void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_w
                       draw_height, 
                       curr_color);
     }
+    if (viewport_info) {
+        DrawRectangle(x_offset, y_offset, 250, 300, viewport_info_bg_color);
+        DrawText(TextFormat("IPF = %d", IPF), x_offset, y_offset, 20, YELLOW);
+        DrawText(TextFormat("SOUND = %d", chip8.sound), x_offset, y_offset + 20, 20, YELLOW);
+    }
     EndScissorMode();
 
 }
@@ -209,7 +220,11 @@ void render_disassembly_viewport(int x_offset, int y_offset, int view_width, int
     DrawRectangle(x_offset, y_offset, view_width, view_height - (padding * 4 + 1), panel_bg_color);
 
     for (int i = 0; i < 30 * 2; i += 2) {
-        DrawTextEx(customfont, get_dissassembly(i), (Vector2){(float)x_offset + 5.0f, (float)y_offset + ((i/2) * 25)}, 32, 2, GREEN);
+        if (i == 0) {
+            DrawTextEx(customfont, get_dissassembly(i), (Vector2){(float)x_offset + 5.0f, (float)y_offset + ((i/2) * 25)}, 32, 2, YELLOW);
+        } else {
+            DrawTextEx(customfont, get_dissassembly(i), (Vector2){(float)x_offset + 5.0f, (float)y_offset + ((i/2) * 25)}, 32, 2, GREEN);
+        }
     }
     EndScissorMode();
 
@@ -218,18 +233,33 @@ void render_disassembly_viewport(int x_offset, int y_offset, int view_width, int
 void render_memory_viewport(int x_offset, int y_offset, int view_width, int view_height) {
 
     GuiPanel(memory_plane, "Memory");
+    BeginScissorMode(x_offset, y_offset, view_width, view_height);
     DrawRectangle(x_offset, y_offset, view_width, view_height - (padding * 4 + 1), panel_bg_color);
+
+    for (int i = 0; i < 16; i++) {
+        DrawText(TextFormat("V%x = %02x", i, chip8.v[i]), x_offset, y_offset + (i * 18), 20, GREEN);
+    }
+
+    EndScissorMode();
 }
 
 void handle_window_input() {
 
     if (IsKeyPressed(KEY_SPACE)) {
-        if (speed == false) {
+        if (!speed) {
             speed = true;
             IPF = 2000;
-        } else if (speed == true) {
+        } else if (speed) {
             speed = false;
             IPF = 11;
+        }
+    }
+
+    if (IsKeyPressed(KEY_TAB)) {
+        if (!viewport_info) {
+            viewport_info = true;
+        } else {
+            viewport_info = false;
         }
     }
     if (IsKeyPressed(KEY_FIVE)) {
@@ -291,6 +321,9 @@ void handle_game_input() {
 
 } 
 
+
+
+
 const char* get_dissassembly(int offset) {
 
     static char disassembly[64];
@@ -322,12 +355,13 @@ const char* get_dissassembly(int offset) {
                     break;
                     }
                 case 0x2: std::sprintf(mnemonic_ptr, "LD PALETTE, %02X", nn); break;
-                case 0x3: std::sprintf(mnemonic_ptr, "SPRW = %02X", nn); break;
-                case 0x4: std::sprintf(mnemonic_ptr, "SPRH = %02X", nn); break;
-                case 0x5: std::sprintf(mnemonic_ptr, "ALPHA = %02X", nn); break;
-
-
-                case 0x8: std::sprintf(mnemonic_ptr, "BLEND = %X", n); break;
+                case 0x3: std::sprintf(mnemonic_ptr, "SPRW := %02X", nn); break;
+                case 0x4: std::sprintf(mnemonic_ptr, "SPRH := %02X", nn); break;
+                case 0x5: std::sprintf(mnemonic_ptr, "ALPHA := %02X", nn); break;
+                case 0x6: std::sprintf(mnemonic_ptr, "PLAYSOUND, LP := %X", n); break;
+                case 0x7: std::sprintf(mnemonic_ptr, "STOPSOUND"); break;
+                case 0x8: std::sprintf(mnemonic_ptr, "BLEND := %X", n); break;
+                case 0x9: std::sprintf(mnemonic_ptr, "COLL COLOR := %02X", nn); break;
             }
             if (nnn == 0x0E0) {
                 std::sprintf(mnemonic_ptr, "CLS");
@@ -354,7 +388,7 @@ const char* get_dissassembly(int offset) {
 
         case 0x8:
             switch (n) {
-                case 0x0: std::sprintf(mnemonic_ptr, "V%x = V%x", x, y); break;
+                case 0x0: std::sprintf(mnemonic_ptr, "V%x := V%x", x, y); break;
                 case 0x1: std::sprintf(mnemonic_ptr, "V%x | V%x", x, y); break;
                 case 0x2: std::sprintf(mnemonic_ptr, "V%x & V%x", x, y); break;
                 case 0x3: std::sprintf(mnemonic_ptr, "V%x ^ V%x", x, y); break;
@@ -371,14 +405,14 @@ const char* get_dissassembly(int offset) {
 
         case 0x9: std::sprintf(mnemonic_ptr, "SNE V%x,  V%x", x, y); break;
         case 0xA: std::sprintf(mnemonic_ptr, "LD I, 0x%03X", nnn); break;
-        case 0xB: std::sprintf(mnemonic_ptr, "PC = %03X + v0", nn); break;
+        case 0xB: std::sprintf(mnemonic_ptr, "PC := %03X + v0", nn); break;
         case 0xC: std::sprintf(mnemonic_ptr, "RAND & V%x", x); break;
-        case 0xD: std::sprintf(mnemonic_ptr, "DRAW V%X, V%X, %X", x, y, n); break;
+        case 0xD: std::sprintf(mnemonic_ptr, "DRAW V%X, V%X, %d", x, y, n); break;
         case 0xE:
             if (nn == 0x9E) {
-                std::sprintf(mnemonic_ptr, "SKIP PRESSED V%x", x);
+                std::sprintf(mnemonic_ptr, "SKIP PRSD V%x", x);
             } else if (nn == 0xA1) {
-                std::sprintf(mnemonic_ptr, "SKIP NOT PRESSED V%x", x);
+                std::sprintf(mnemonic_ptr, "SKIP N PRSD V%x", x);
             }
             break;
         case 0xF:
@@ -389,7 +423,18 @@ const char* get_dissassembly(int offset) {
                     std::sprintf(mnemonic_ptr, "LD I, 0x%04X", nnnn);
                     break;
                     }
+                
+                case 0x01: std::sprintf(mnemonic_ptr, "PLANE %x", x); break;
+                case 0x02: std::sprintf(mnemonic_ptr, "LD AUDIO PATTERN"); break;
+                case 0x07: std::sprintf(mnemonic_ptr, "V%x := DELAY", x); break;
+                case 0x15: std::sprintf(mnemonic_ptr, "DELAY := V%x", x); break;
+                case 0x18: std::sprintf(mnemonic_ptr, "SOUND := V%x", x); break;
                 case 0x1E: std::sprintf(mnemonic_ptr, "I += V%x", x); break;
+                case 0x29: std::sprintf(mnemonic_ptr, "SMALLHEX V%x", x); break;
+                case 0x30: std::sprintf(mnemonic_ptr, "BIGHEX V%x", x); break;
+                case 0x33: std::sprintf(mnemonic_ptr, "BCD"); break;
+                case 0x55: std::sprintf(mnemonic_ptr, "WRITE V0-V%x", x); break;
+                case 0x65: std::sprintf(mnemonic_ptr, "READ V0-V%x", x); break;
             } 
             break;
         default:

@@ -6,8 +6,8 @@
 int SCREEN_HEIGHT = 800;
 int SCREEN_WIDTH = 1280;
 
-int chip8_width = 850;
-int chip8_height = 425;
+int chip8_width = 800;
+int chip8_height = 400;
 
 std::array<Color, 4> palette1 = {{
     {244, 233, 205, 255},
@@ -53,7 +53,7 @@ Rectangle chip8_screen = {
 };
 
 int disassembly_x = chip8_screen.x + chip8_screen.width + padding;
-int disassembly_width = SCREEN_WIDTH - disassembly_x - padding;
+int disassembly_width = SCREEN_WIDTH - disassembly_x - padding - 90;
 int disassembly_height = SCREEN_HEIGHT - (padding * 2);
 
 Rectangle disassembly = {
@@ -63,9 +63,20 @@ Rectangle disassembly = {
     (float)disassembly_height
 };
 
+int control_bar_x = disassembly_x + disassembly_width + padding;
+int control_bar_width = SCREEN_WIDTH - control_bar_x - padding;
+int control_bar_height = SCREEN_HEIGHT - (padding * 2);
+
+Rectangle control_bar = {
+    (float)control_bar_x,
+    (float)padding,
+    (float)control_bar_width,
+    (float)control_bar_height
+};
+
 int memory_plane_y = chip8_screen.y + chip8_screen.height + (padding * 5) ;
 int memory_plane_height = SCREEN_HEIGHT - memory_plane_y - padding;
-int memory_plane_width = SCREEN_WIDTH - (padding * 3) - disassembly_width;
+int memory_plane_width = chip8_screen.width;
 
 
 Rectangle memory_plane = {
@@ -78,3 +89,4 @@ Rectangle memory_plane = {
 Vector2 mousePosition = { 0 };
 
 Color panel_bg_color = {19, 6, 6, 255};
+Color viewport_info_bg_color = {19, 19, 19, 190};
