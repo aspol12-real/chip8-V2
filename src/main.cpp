@@ -237,6 +237,8 @@ void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_w
         DrawRectangle(x_offset, y_offset, 250, 300, viewport_info_bg_color);
         DrawText(TextFormat("IPF = %d", IPF), x_offset, y_offset, 20, YELLOW);
         DrawText(TextFormat("SOUND = %d", chip8.sound), x_offset, y_offset + 20, 20, YELLOW);
+        DrawText(TextFormat("ROM SIZE = %d", chip8.fileSize), x_offset, y_offset + 40, 20, YELLOW);
+        DrawText(TextFormat("VOLUME = %02f", audio_data.volume), x_offset, y_offset + 60, 20, YELLOW);
     }
     if (audio_data.muted) {
         DrawText("MUTED", view_width - 100, y_offset, 20, RED);
@@ -254,12 +256,14 @@ void render_disassembly_viewport(int x_offset, int y_offset, int view_width, int
     BeginScissorMode(x_offset, y_offset, view_width, view_height);
     DrawRectangle(x_offset, y_offset, view_width, view_height - (padding * 4 + 1), panel_bg_color);
 
+    Color curr_text_color;
     for (int i = 0; i < 30 * 2; i += 2) {
         if (i == 0) {
-            DrawTextEx(customfont, get_dissassembly(i), (Vector2){(float)x_offset + 5.0f, (float)y_offset + ((i/2) * 25)}, 32, 2, YELLOW);
+            curr_text_color = YELLOW;
         } else {
-            DrawTextEx(customfont, get_dissassembly(i), (Vector2){(float)x_offset + 5.0f, (float)y_offset + ((i/2) * 25)}, 32, 2, GREEN);
+            curr_text_color = GREEN;
         }
+        DrawTextEx(customfont, get_dissassembly(i), (Vector2){(float)x_offset + 5.0f, (float)y_offset + ((i/2) * 25)}, 32, 2, curr_text_color);
     }
     EndScissorMode();
 
@@ -329,6 +333,7 @@ void handle_window_input() {
             audio_data.muted = false;
         }
     } 
+
     if (IsKeyPressed(KEY_T)) {
         chip8.execute();
     }
@@ -503,4 +508,5 @@ void handle_sound(cpu& chip8, ma_device& device) {
     } else {
         audio_data.sound_timer_active = false;
     }
+    
 }

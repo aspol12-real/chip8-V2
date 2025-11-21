@@ -56,7 +56,7 @@ void cpu::load_rom(std::string rom) {
     }
 
     file.seekg(0, std::ios::end);
-    size_t fileSize = file.tellg();
+    fileSize = file.tellg();
     file.seekg(0);
 
     if (fileSize < CHIP8_SIZE) {

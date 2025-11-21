@@ -19,7 +19,6 @@ void graphics::clear_all() {
     memset(megachip_scr, 0, size_bytes);
     memset(megachip_scrbuffer, 0, size_bytes);
 
-
 }
 
 void graphics::clear_plane() {

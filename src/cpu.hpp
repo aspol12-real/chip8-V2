@@ -94,6 +94,7 @@ class cpu {
 
     public:
 
+        size_t fileSize;
         graphics* scr_ptr = nullptr; 
 
         void set_graphics_ptr(graphics* ptr) {
@@ -113,7 +114,7 @@ class cpu {
 
         uint16_t pc; //16-bit program counter
         uint16_t sp; //16-bit stack pointer
-        uint32_t I;  //16-bit memory pointer
+        uint32_t I;  //32-bit memory pointer
 
         uint8_t sound; //8-bit sound timer
         uint8_t delay; //8-bit delay timer
