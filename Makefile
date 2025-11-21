@@ -1,9 +1,9 @@
 CXX = g++
-CXXFLAGS = --std=c++17
+CXXFLAGS = --std=c++17 -g
 
-LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt 
+LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt
 
-SOURCES = src/main.cpp src/cpu.cpp src/graphics.cpp src/sound.cpp src/debug.cpp
+SOURCES = src/main.cpp src/cpu.cpp src/graphics.cpp src/sound.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 chip8: $(OBJECTS)

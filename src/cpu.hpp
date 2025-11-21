@@ -6,6 +6,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <ctime>
+#include <math.h>
 
 #include "graphics.hpp"
 
@@ -87,6 +88,9 @@ class cpu {
         void ld_i_nnnnnn(uint8_t nn);
         void ld_i_palette(uint8_t nn);
         
+        //audio opcodes
+        void audio_pattern_xochip();
+        void audio_pitch_xochip(uint8_t x);
 
     public:
 
@@ -121,4 +125,8 @@ class cpu {
         void execute();
         void tick_timers();
         
+
+        //audio stuffs
+        uint8_t audioBuffer[16] = {255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0};
+        double frequency = 500;
 };

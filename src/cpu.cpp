@@ -81,6 +81,7 @@ void cpu::load_rom(std::string rom) {
     file.close();
 }
 
+
 void cpu::tick_timers() {
 
     if (delay > 0) {
@@ -210,7 +211,7 @@ void cpu::execute() {
 
                 case 0x00: word_index(); break;
                 case 0x01: scr_ptr->selected_plane = x; break;
-                //case 0x02: audio pattern into buffer
+                case 0x02: audio_pattern_xochip(); break;
                 case 0x07: v[x] = delay; break;
                 case 0x0A: wait(x); break;
                 case 0x15: delay = v[x]; break;
@@ -219,7 +220,7 @@ void cpu::execute() {
                 case 0x29: small_hex(x); break;
                 case 0x30: big_hex(x); break;
                 case 0x33: BCD(x); break;
-                //case 3A audio pitch 
+                case 0x3A: audio_pitch_xochip(v[x]); break;
                 case 0x55: reg_to_mem(0, x); I += (x + 1); break;
                 case 0x65: reg_from_mem(0, x); I += (x + 1); break;
                 case 0x75: reg_to_flags(0, x); break;
@@ -483,4 +484,22 @@ void cpu::ld_i_palette(uint8_t nn) {
 
         scr_ptr->palette[i] = color;
     }
+}
+
+void cpu::audio_pattern_xochip() {
+    //put 16 byte audio pattern into audioBuffer
+
+    for (int i = 0; i < 16; i++) {
+        audioBuffer[i] = mem[i + I];
+    }
+}
+
+void cpu::audio_pitch_xochip(uint8_t x) {
+
+    float pitch_val = static_cast<float>(x);
+
+    float base = 2.0;   
+    float exponent = (pitch_val - 64.0f)/48.0f;
+
+    frequency = 50.0f * std::pow(base, exponent);
 }

@@ -10,7 +10,7 @@
 #include "graphics.hpp"
 #include "sound.hpp"
 
-
+void handle_sound(cpu& chip8, ma_device& device);
 void render_window(graphics& scr);
 void handle_game_input();
 void render_disassembly_viewport(int x_offset, int y_offset, int view_width, int view_height);
@@ -19,6 +19,8 @@ void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_w
 const char* get_dissassembly(int offset);
 
 cpu chip8;
+audioEngine sound;
+audioData audio_data;
 
 int IPF = 11;  //by default
 bool speed = false;
@@ -30,15 +32,9 @@ int window_width = SCREEN_WIDTH;
 std::string rom;
 Font customfont;
 
-int main(int argc, char* argv[]) {
 
 
-    //one day this will not be necessary...
-    if (argc < 2) {
-        std::cout << "USAGE: ./chip8 [filename].ch8 \n";
-        exit( 1 );
-    }   
-
+void init_all() {
 
     //  raylib/raygui setup
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "CHIP8");
@@ -47,18 +43,52 @@ int main(int argc, char* argv[]) {
     GuiEnable();
     customfont = LoadFont("res/fonts/JetBrainsMono-Regular.ttf");
 
+
+}
+
+
+
+int main(int argc, char* argv[]) {
+
+    //one day this will not be necessary...
+    if (argc < 2) {
+        std::cout << "USAGE: ./chip8 [filename].ch8 \n";
+        exit( 1 );
+    }   
+
     graphics scr(chip8.get_memory_ptr(), &chip8);
     chip8.set_graphics_ptr(&scr);
+
+    init_all();
+
+    // miniaudio setup
+
+    ma_device_config config = ma_device_config_init(ma_device_type_playback);
+    config.playback.format   = ma_format_f32;
+    config.playback.channels = 2;              
+    config.sampleRate        = 48000;  
+    config.dataCallback      = sound.data_callback;   // This function will be called when miniaudio needs more data.
+    config.pUserData         = &audio_data;   // Can be accessed from the device object (device.pUserData).
+    ma_device device;
+
+    if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
+        return -1;  // Failed to initialize the device.
+    } 
+
+    // init chip8
 
     rom = argv[1];
     chip8.init(rom);
 
     //everything that happens in the window
 
+    ma_device_start(&device);
+    
     while (!WindowShouldClose()) {
 
         handle_game_input();
         handle_window_input();
+        handle_sound(chip8, device);
         chip8.tick_timers();
 
         if (run) {
@@ -68,6 +98,8 @@ int main(int argc, char* argv[]) {
         }
         render_window(scr);  
     }
+
+    ma_device_uninit(&device);
 
     CloseWindow();
     return 0;
@@ -169,9 +201,9 @@ void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_w
 
             if (color_idx == 0) {
                 color = 0;
+            } else {
+                color = scr.palette[color_idx];
             }
-
-            color = scr.palette[color_idx];
 
             //unpack color bytes into raylib's RGBA format
             uint8_t alpha = color >> 24;
@@ -205,6 +237,9 @@ void render_chip8_viewport(graphics& scr, int x_offset, int y_offset, int view_w
         DrawRectangle(x_offset, y_offset, 250, 300, viewport_info_bg_color);
         DrawText(TextFormat("IPF = %d", IPF), x_offset, y_offset, 20, YELLOW);
         DrawText(TextFormat("SOUND = %d", chip8.sound), x_offset, y_offset + 20, 20, YELLOW);
+    }
+    if (audio_data.muted) {
+        DrawText("MUTED", view_width - 100, y_offset, 20, RED);
     }
     EndScissorMode();
 
@@ -248,7 +283,7 @@ void handle_window_input() {
     if (IsKeyPressed(KEY_SPACE)) {
         if (!speed) {
             speed = true;
-            IPF = 2000;
+            IPF = 50000;
         } else if (speed) {
             speed = false;
             IPF = 11;
@@ -287,6 +322,13 @@ void handle_window_input() {
         }
     }
 
+    if (IsKeyPressed(KEY_M)) {
+        if (!audio_data.muted) {
+            audio_data.muted = true;
+        } else {
+            audio_data.muted = false;
+        }
+    } 
     if (IsKeyPressed(KEY_T)) {
         chip8.execute();
     }
@@ -299,6 +341,9 @@ void handle_window_input() {
         ToggleFullscreen();
     }
 }
+
+
+
 
 void handle_game_input() {
 
@@ -443,4 +488,19 @@ const char* get_dissassembly(int offset) {
     }
 
     return disassembly;
+}
+
+void handle_sound(cpu& chip8, ma_device& device) {
+
+    for (int i = 0; i < 16; i++) {
+        audio_data.audioBuffer[i] = chip8.audioBuffer[i];
+    }
+
+    audio_data.targetFrequency = chip8.frequency;
+
+    if (chip8.sound > 0) {
+        audio_data.sound_timer_active = true;
+    } else {
+        audio_data.sound_timer_active = false;
+    }
 }
